@@ -471,56 +471,51 @@ function addService() {
 function editService(serviceId) {
     document.getElementById('serviceModalTitle').innerHTML = '<i class="bx bx-edit me-2"></i>Edit Messaging Service';
     
-    // Load service data (simulated)
-    const serviceData = {
-        id: serviceId,
-        name: 'Main SMS Service',
-        type: 'SMS',
-        provider: 'messaging-service.co.tz',
-        base_url: 'https://messaging-service.co.tz',
-        api_version: 'v2',
-        sender_id: 'FeedTanPay',
-        bearer_token: 'd983d9d1d54176047e68547aba079ba4',
-        username: '',
-        password: '',
-        rate_limit_per_hour: 100,
-        cost_per_message: 0.0160,
-        currency: 'TZS',
-        webhook_url: '',
-        test_mode: false,
-        notes: 'Main SMS service for transactional messages'
-    };
-    
-    document.getElementById('service_id').value = serviceData.id;
-    document.getElementById('service_name').value = serviceData.name;
-    document.getElementById('service_type').value = serviceData.type;
-    document.getElementById('service_provider').value = serviceData.provider;
-    document.getElementById('service_base_url').value = serviceData.base_url;
-    document.getElementById('service_api_version').value = serviceData.api_version;
-    document.getElementById('service_sender_id').value = serviceData.sender_id;
-    document.getElementById('service_bearer_token').value = serviceData.bearer_token;
-    document.getElementById('service_username').value = serviceData.username;
-    document.getElementById('service_password').value = serviceData.password;
-    document.getElementById('service_rate_limit').value = serviceData.rate_limit_per_hour;
-    document.getElementById('service_cost').value = serviceData.cost_per_message;
-    document.getElementById('service_currency').value = serviceData.currency;
-    document.getElementById('service_webhook_url').value = serviceData.webhook_url;
-    document.getElementById('service_test_mode').checked = serviceData.test_mode;
-    document.getElementById('service_notes').value = serviceData.notes;
-    
-    // Show appropriate auth fields
-    if (serviceData.bearer_token) {
-        document.getElementById('auth_bearer').checked = true;
-        document.getElementById('bearer_auth_fields').style.display = 'block';
-        document.getElementById('basic_auth_fields').style.display = 'none';
-    } else {
-        document.getElementById('auth_basic').checked = true;
-        document.getElementById('bearer_auth_fields').style.display = 'none';
-        document.getElementById('basic_auth_fields').style.display = 'block';
-    }
-    
-    const modal = new bootstrap.Modal(document.getElementById('serviceModal'));
-    modal.show();
+    // Fetch service data from database
+    fetch(`/messaging/services/${serviceId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const serviceData = data.data;
+                
+                // Populate form with real data
+                document.getElementById('service_id').value = serviceData.id;
+                document.getElementById('service_name').value = serviceData.name || '';
+                document.getElementById('service_type').value = serviceData.type || '';
+                document.getElementById('service_provider').value = serviceData.provider || '';
+                document.getElementById('service_base_url').value = serviceData.base_url || '';
+                document.getElementById('service_api_version').value = serviceData.api_version || '';
+                document.getElementById('service_sender_id').value = serviceData.sender_id || '';
+                document.getElementById('service_bearer_token').value = serviceData.bearer_token || '';
+                document.getElementById('service_username').value = serviceData.username || '';
+                document.getElementById('service_password').value = serviceData.password || '';
+                document.getElementById('service_rate_limit').value = serviceData.rate_limit_per_hour || '';
+                document.getElementById('service_cost').value = serviceData.cost_per_message || '';
+                document.getElementById('service_currency').value = serviceData.currency || '';
+                document.getElementById('service_webhook_url').value = serviceData.webhook_url || '';
+                document.getElementById('service_test_mode').checked = serviceData.test_mode || false;
+                document.getElementById('service_notes').value = serviceData.notes || '';
+                
+                // Show appropriate auth fields
+                if (serviceData.bearer_token) {
+                    document.getElementById('auth_bearer').checked = true;
+                    document.getElementById('bearer_auth_fields').style.display = 'block';
+                    document.getElementById('basic_auth_fields').style.display = 'none';
+                } else {
+                    document.getElementById('auth_basic').checked = true;
+                    document.getElementById('bearer_auth_fields').style.display = 'none';
+                    document.getElementById('basic_auth_fields').style.display = 'block';
+                }
+                
+                const modal = new bootstrap.Modal(document.getElementById('serviceModal'));
+                modal.show();
+            } else {
+                showNotification('Failed to load service data: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error loading service data: ' + error.message, 'error');
+        });
 }
 
 function saveService() {
@@ -589,54 +584,40 @@ function saveService() {
 }
 
 function viewService(serviceId) {
-    // Simulate loading service details
-    const serviceData = {
-        name: 'Main SMS Service',
-        type: 'SMS',
-        provider: 'messaging-service.co.tz',
-        base_url: 'https://messaging-service.co.tz',
-        api_version: 'v2',
-        sender_id: 'FeedTanPay',
-        is_active: true,
-        test_mode: false,
-        rate_limit_per_hour: 100,
-        cost_per_message: 0.0160,
-        currency: 'TZS',
-        webhook_url: '',
-        last_sync_at: new Date().toISOString(),
-        created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        notes: 'Main SMS service for transactional messages',
-        sms_messages_count: 1250,
-        email_messages_count: 0
-    };
-    
-    const content = `
-        <div class="row">
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label class="form-label">Service Name</label>
-                    <div class="fw-bold">${serviceData.name}</div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Type</label>
-                    <div><span class="badge bg-primary">${serviceData.type}</span></div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Provider</label>
-                    <div>${serviceData.provider}</div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Base URL</label>
-                    <div><small>${serviceData.base_url}</small></div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">API Version</label>
-                    <div>${serviceData.api_version}</div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Sender ID</label>
-                    <div>${serviceData.sender_id || '-'}</div>
-                </div>
+    // Fetch service data from database
+    fetch(`/messaging/services/${serviceId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const serviceData = data.data;
+                
+                const content = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Service Name</label>
+                                <div class="fw-bold">${serviceData.name || '-'}</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Type</label>
+                                <div><span class="badge bg-primary">${serviceData.type || '-'}</span></div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Provider</label>
+                                <div>${serviceData.provider || '-'}</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Base URL</label>
+                                <div><small>${serviceData.base_url || '-'}</small></div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">API Version</label>
+                                <div>${serviceData.api_version || '-'}</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Sender ID</label>
+                                <div>${serviceData.sender_id || '-'}</div>
+                            </div>
             </div>
             <div class="col-md-6">
                 <div class="mb-3">
@@ -648,16 +629,16 @@ function viewService(serviceId) {
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Rate Limit</label>
-                    <div>${serviceData.rate_limit_per_hour} messages/hour</div>
+                    <div>${serviceData.rate_limit_per_hour || 0} messages/hour</div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Cost per Message</label>
-                    <div>${serviceData.currency} ${serviceData.cost_per_message.toFixed(4)}</div>
+                    <div>${serviceData.currency || 'TZS'} ${parseFloat(serviceData.cost_per_message || 0).toFixed(4)}</div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Messages Sent</label>
                     <div>
-                        SMS: ${serviceData.sms_messages_count}
+                        SMS: ${serviceData.sms_messages_count || 0}
                         ${serviceData.email_messages_count ? '<br>Email: ' + serviceData.email_messages_count : ''}
                     </div>
                 </div>
@@ -667,7 +648,7 @@ function viewService(serviceId) {
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Created</label>
-                    <div>${new Date(serviceData.created_at).toLocaleString()}</div>
+                    <div>${serviceData.created_at ? new Date(serviceData.created_at).toLocaleString() : 'Unknown'}</div>
                 </div>
             </div>
         </div>
@@ -681,6 +662,13 @@ function viewService(serviceId) {
     
     document.getElementById('serviceDetailsContent').innerHTML = content;
     new bootstrap.Modal(document.getElementById('serviceDetailsModal')).show();
+} else {
+    showNotification('Failed to load service details: ' + data.message, 'error');
+}
+})
+.catch(error => {
+    showNotification('Error loading service details: ' + error.message, 'error');
+});
 }
 
 function testService(serviceId) {

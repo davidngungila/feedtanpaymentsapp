@@ -567,4 +567,9 @@ class DashboardController extends Controller
     {
         return view('system-settings.integrations.payment-api');
     }
+
+    public function systemSecurityLogs()
+    {
+        return view('system-settings.security-logs');
+    }
 }

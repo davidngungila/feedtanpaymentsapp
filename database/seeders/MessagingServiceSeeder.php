@@ -26,7 +26,7 @@ class MessagingServiceSeeder extends Seeder
     
     private function createSmsServices()
     {
-        // Primary SMS Service - Messaging Service Co. TZ
+        // Primary SMS Service - FeedTan Pay
         MessagingService::create([
             'name' => 'Primary SMS Service',
             'type' => 'SMS',
@@ -42,105 +42,36 @@ class MessagingServiceSeeder extends Seeder
             'is_active' => true,
             'test_mode' => false,
             'webhook_url' => 'https://feedtanpay.co.tz/webhook/sms',
-            'notes' => 'Primary SMS service for all transactional messages',
-        ]);
-        
-        // Backup SMS Service
-        MessagingService::create([
-            'name' => 'Backup SMS Service',
-            'type' => 'SMS',
-            'provider' => 'messaging-service.co.tz',
-            'base_url' => 'https://messaging-service.co.tz',
-            'api_version' => 'v2',
-            'api_key' => 'f9a89f439206e27169ead766463ca92c',
-            'bearer_token' => 'f9a89f439206e27169ead766463ca92c',
-            'sender_id' => 'FEEDTAN',
-            'rate_limit_per_hour' => 500,
-            'cost_per_message' => 0.0160,
-            'currency' => 'TZS',
-            'is_active' => true,
-            'test_mode' => false,
-            'webhook_url' => 'https://feedtanpay.co.tz/webhook/sms-backup',
-            'notes' => 'Backup SMS service for failover scenarios',
-        ]);
-        
-        // Test SMS Service
-        MessagingService::create([
-            'name' => 'Test SMS Service',
-            'type' => 'SMS',
-            'provider' => 'messaging-service.co.tz',
-            'base_url' => 'https://messaging-service.co.tz',
-            'api_version' => 'v2',
-            'api_key' => 'f9a89f439206e27169ead766463ca92c',
-            'bearer_token' => 'f9a89f439206e27169ead766463ca92c',
-            'sender_id' => 'FEEDTAN',
-            'rate_limit_per_hour' => 100,
-            'cost_per_message' => 0.0000,
-            'currency' => 'TZS',
-            'is_active' => true,
-            'test_mode' => true,
-            'webhook_url' => 'https://feedtanpay.co.tz/webhook/sms-test',
-            'notes' => 'Test SMS service for development and testing',
+            'notes' => 'Primary SMS service with API Token: f9a89f439206e27169ead766463ca92c',
         ]);
     }
     
     private function createEmailServices()
     {
-        // Primary Email Service
+        // Primary Email Service - Gmail
         MessagingService::create([
-            'name' => 'Primary Email Service',
+            'name' => 'Primary Email Service - Gmail',
             'type' => 'EMAIL',
-            'provider' => 'messaging-service.co.tz',
-            'base_url' => 'https://messaging-service.co.tz',
-            'api_version' => 'v2',
-            'api_key' => 'f9a89f439206e27169ead766463ca92c',
-            'bearer_token' => 'f9a89f439206e27169ead766463ca92c',
+            'provider' => 'gmail',
+            'base_url' => 'https://gmail.googleapis.com',
+            'api_version' => 'v1',
+            'username' => 'feedtan15@gmail.com',
+            'password' => 'dmxf jyhl eymc libp',
             'sender_id' => 'FeedTan Pay',
+            'config' => [
+                'from_email' => 'feedtan15@gmail.com',
+                'from_name' => 'FeedTan Pay',
+                'smtp_host' => 'smtp.gmail.com',
+                'smtp_port' => 587,
+                'encryption' => 'tls'
+            ],
             'rate_limit_per_hour' => 2000,
             'cost_per_message' => 0.0000,
             'currency' => 'TZS',
             'is_active' => true,
             'test_mode' => false,
             'webhook_url' => 'https://feedtanpay.co.tz/webhook/email',
-            'notes' => 'Primary email service for transactional emails',
-        ]);
-        
-        // Backup Email Service
-        MessagingService::create([
-            'name' => 'Backup Email Service',
-            'type' => 'EMAIL',
-            'provider' => 'messaging-service.co.tz',
-            'base_url' => 'https://messaging-service.co.tz',
-            'api_version' => 'v2',
-            'api_key' => 'f9a89f439206e27169ead766463ca92c',
-            'bearer_token' => 'f9a89f439206e27169ead766463ca92c',
-            'sender_id' => 'FeedTan Pay',
-            'rate_limit_per_hour' => 1000,
-            'cost_per_message' => 0.0000,
-            'currency' => 'TZS',
-            'is_active' => true,
-            'test_mode' => false,
-            'webhook_url' => 'https://feedtanpay.co.tz/webhook/email-backup',
-            'notes' => 'Backup email service for failover scenarios',
-        ]);
-        
-        // Test Email Service
-        MessagingService::create([
-            'name' => 'Test Email Service',
-            'type' => 'EMAIL',
-            'provider' => 'messaging-service.co.tz',
-            'base_url' => 'https://messaging-service.co.tz',
-            'api_version' => 'v2',
-            'api_key' => 'f9a89f439206e27169ead766463ca92c',
-            'bearer_token' => 'f9a89f439206e27169ead766463ca92c',
-            'sender_id' => 'FeedTan Pay',
-            'rate_limit_per_hour' => 100,
-            'cost_per_message' => 0.0000,
-            'currency' => 'TZS',
-            'is_active' => true,
-            'test_mode' => true,
-            'webhook_url' => 'https://feedtanpay.co.tz/webhook/email-test',
-            'notes' => 'Test email service for development and testing',
+            'notes' => 'Primary Gmail service with app password: dmxf jyhl eymc libp',
         ]);
     }
     

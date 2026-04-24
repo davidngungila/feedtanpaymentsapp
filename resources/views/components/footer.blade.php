@@ -6,8 +6,8 @@
                 © {{ date('Y') }} FeedTan CMG. All rights reserved.
             </div>
             <div class="d-none d-lg-inline-block">
-                <span class="text-muted">Secure Payments Powered by</span>
-                <a href="#" class="footer-link ms-2">Mobile Money</a>
+                <span class="text-muted">Secured System Powered by</span>
+                <a href="#" class="footer-link ms-2">FeedTan Team</a>
             </div>
         </div>
     </div>

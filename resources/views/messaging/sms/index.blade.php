@@ -23,6 +23,12 @@
                                 <a href="{{ route('messaging.dashboard') }}" class="btn btn-outline-secondary">
                                     <i class="bx bx-arrow-back me-2"></i>Dashboard
                                 </a>
+                                <button type="button" class="btn btn-outline-info" onclick="showSmsBalance()">
+                                    <i class="bx bx-wallet me-2"></i>Balance
+                                </button>
+                                <a href="{{ route('messaging.sms.logs') }}" class="btn btn-outline-primary">
+                                    <i class="bx bx-history me-2"></i>Logs
+                                </a>
                                 <button type="button" class="btn btn-outline-success" onclick="refreshSmsMessages()">
                                     <i class="bx bx-refresh me-2"></i>Refresh
                                 </button>
@@ -195,7 +201,7 @@
                                 </thead>
                                 <tbody>
                                     @foreach($messages as $message)
-                                        <tr>
+                                        <tr data-message-id="{{ $message->id }}">
                                             <td>
                                                 <small class="text-muted">#{{ $message->id }}</small>
                                             </td>
@@ -404,15 +410,43 @@ function sendSms(formData) {
 }
 
 function viewSmsMessage(messageId) {
+    console.log('viewSmsMessage called with messageId:', messageId);
+    
     fetch(`/api/sms-messages/${messageId}`)
-        .then(response => response.json())
+        .then(response => {
+            console.log('Response status:', response.status);
+            console.log('Response ok:', response.ok);
+            
+            if (!response.ok) {
+                console.error('Response not ok:', response.status, response.statusText);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            return response.json();
+        })
         .then(data => {
+            console.log('Received data:', data);
+            
+            if (!data.success) {
+                console.error('API returned success=false:', data.message);
+                throw new Error(data.message || 'API request failed');
+            }
+            
+            // Determine data source and show appropriate message
+            const dataSource = data.source || 'unknown';
+            const sourceMessage = dataSource === 'external_api' ? 
+                '<div class="alert alert-success mb-3"><i class="bx bx-check-circle me-2"></i><strong>Live Data:</strong> Details from external SMS API</div>' :
+                dataSource === 'local_database' ? 
+                '<div class="alert alert-info mb-3"><i class="bx bx-info-circle me-2"></i><strong>Local Data:</strong> Details from local database</div>' :
+                '';
+            
             const content = `
+                ${sourceMessage}
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label">Message ID</label>
-                            <div class="fw-bold">${data.message_id}</div>
+                            <div class="fw-bold text-monospace">${data.message_id}</div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Recipient</label>
@@ -424,12 +458,18 @@ function viewSmsMessage(messageId) {
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Service</label>
-                            <div>${data.messagingService?.name || 'N/A'}</div>
+                            <div>${data.messaging_service?.name || 'N/A'}</div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Status</label>
-                            <div><span class="badge bg-${data.getStatusBadgeColor()}">${data.status_name}</span></div>
+                            <div><span class="badge bg-${data.getStatusBadgeColor}">${data.status_name}</span></div>
                         </div>
+                        ${data.channel ? `
+                        <div class="mb-3">
+                            <label class="form-label">Channel</label>
+                            <div>${data.channel}</div>
+                        </div>
+                        ` : ''}
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
@@ -438,38 +478,166 @@ function viewSmsMessage(messageId) {
                         </div>
                         <div class="mb-3">
                             <label class="form-label">SMS Count</label>
-                            <div>${data.sms_count} message(s)</div>
+                            <div>${data.sms_count || 1} message(s)</div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Cost</label>
-                            <div>${data.currency} ${data.price.toFixed(4)}</div>
+                            <div>${data.currency} ${parseFloat(data.price).toFixed(4)}</div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Created</label>
                             <div>${new Date(data.created_at).toLocaleString()}</div>
                         </div>
-                        @if(data.sent_at)
+                        ${data.sent_at ? `
                         <div class="mb-3">
                             <label class="form-label">Sent</label>
                             <div>${new Date(data.sent_at).toLocaleString()}</div>
                         </div>
-                        @endif
+                        ` : ''}
+                        ${data.done_at ? `
+                        <div class="mb-3">
+                            <label class="form-label">Done At</label>
+                            <div>${new Date(data.done_at).toLocaleString()}</div>
+                        </div>
+                        ` : ''}
+                        ${data.reference ? `
+                        <div class="mb-3">
+                            <label class="form-label">Reference</label>
+                            <div class="text-monospace">${data.reference}</div>
+                        </div>
+                        ` : ''}
+                        ${data.delivery ? `
+                        <div class="mb-3">
+                            <label class="form-label">Delivery</label>
+                            <div>${data.delivery}</div>
+                        </div>
+                        ` : ''}
+                        ${data.error_message ? `
+                        <div class="mb-3">
+                            <label class="form-label">Error Message</label>
+                            <div class="text-danger">${data.error_message}</div>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
-                @if(data.error_message)
-                <div class="mb-3">
-                    <label class="form-label">Error Message</label>
-                    <div class="text-danger">${data.error_message}</div>
+                ${data.status_group_name ? `
+                <div class="row">
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <label class="form-label">Status Details</label>
+                            <div class="bg-light p-3 rounded">
+                                <strong>Group:</strong> ${data.status_group_name}<br>
+                                <strong>Status:</strong> ${data.status_name}<br>
+                                <strong>Description:</strong> ${data.status_name}
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                @endif
+                ` : ''}
             `;
             
             document.getElementById('smsDetailsContent').innerHTML = content;
             new bootstrap.Modal(document.getElementById('smsDetailsModal')).show();
         })
         .catch(error => {
-            showNotification('Error loading message details', 'error');
+            console.error('Error in viewSmsMessage:', error);
+            console.error('Error details:', error.message, error.stack);
+            
+            // Fallback: Try to get message data from the table
+            try {
+                const messageRow = document.querySelector(`tr[data-message-id="${messageId}"]`);
+                if (messageRow) {
+                    console.log('Using fallback data from table');
+                    
+                    // Extract data from the table row
+                    const recipient = messageRow.querySelector('td:nth-child(2)')?.textContent?.trim() || 'N/A';
+                    const messageText = messageRow.querySelector('td:nth-child(3)')?.textContent?.trim() || 'N/A';
+                    const service = messageRow.querySelector('td:nth-child(4)')?.textContent?.trim() || 'N/A';
+                    const status = messageRow.querySelector('td:nth-child(5)')?.textContent?.trim() || 'N/A';
+                    const sent = messageRow.querySelector('td:nth-child(6)')?.textContent?.trim() || 'N/A';
+                    const cost = messageRow.querySelector('td:nth-child(7)')?.textContent?.trim() || 'N/A';
+                    const user = messageRow.querySelector('td:nth-child(3) small')?.textContent?.trim() || 'Admin User';
+                    
+                    const fallbackContent = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Message ID</label>
+                                    <div class="fw-bold">#${messageId}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Recipient</label>
+                                    <div>${recipient}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Sender ID</label>
+                                    <div>FEEDTAN</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Service</label>
+                                    <div>${service}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Status</label>
+                                    <div class="badge bg-${getStatusBadgeColor(status)}">${status}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Message</label>
+                                    <div class="bg-light p-2 rounded" style="max-height: 150px; overflow-y: auto;">${messageText}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Sent</label>
+                                    <div>${sent}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Cost</label>
+                                    <div>${cost}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">User</label>
+                                    <div>${user}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alert alert-warning">
+                            <i class="bx bx-info-circle me-2"></i>
+                            <strong>Limited Details:</strong> Using fallback data due to API connection issues. Some details may be unavailable.
+                        </div>
+                    `;
+                    
+                    document.getElementById('smsDetailsContent').innerHTML = fallbackContent;
+                    new bootstrap.Modal(document.getElementById('smsDetailsModal')).show();
+                    showNotification('Showing limited message details (API unavailable)', 'warning');
+                    return;
+                }
+            } catch (fallbackError) {
+                console.error('Fallback also failed:', fallbackError);
+            }
+            
+            // If both API and fallback fail
+            showNotification('Error loading message details: ' + error.message, 'error');
         });
+}
+
+// Helper function for status badge colors (fallback)
+function getStatusBadgeColor(status) {
+    switch (status?.toLowerCase()) {
+        case 'delivered':
+            return 'success';
+        case 'sent':
+        case 'enroute':
+            return 'info';
+        case 'failed':
+        case 'rejected':
+            return 'danger';
+        case 'pending':
+        case 'accepted':
+            return 'warning';
+        default:
+            return 'secondary';
+    }
 }
 
 function retrySms(messageId) {
@@ -558,6 +726,183 @@ function showNotification(message, type = 'info') {
         }
     }, 5000);
 }
+
+// SMS Balance Modal
+function showSmsBalance() {
+    fetch('/api/sms-balance')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const balanceData = data.data;
+                const content = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">SMS Balance</label>
+                                <div class="fw-bold fs-3 text-primary">${balanceData.display || balanceData.sms_balance + ' ' + (balanceData.currency || 'TZS')}</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Overdraft</label>
+                                <div>${balanceData.over_draft || 0}</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Balance Type</label>
+                                <div>${balanceData.type || 'N/A'}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Default Balance</label>
+                                <div>${balanceData.default_balance || 'N/A'}</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Default Channel</label>
+                                <div>${balanceData.default || 'N/A'}</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Last Updated</label>
+                                <div>${new Date().toLocaleString()}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('smsBalanceContent').innerHTML = content;
+                new bootstrap.Modal(document.getElementById('smsBalanceModal')).show();
+            } else {
+                showNotification('Failed to load SMS balance: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error loading SMS balance: ' + error.message, 'error');
+        });
+}
+
+// SMS Logs Modal
+function showSmsLogs() {
+    // Show loading state
+    document.getElementById('smsLogsContent').innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+    new bootstrap.Modal(document.getElementById('smsLogsModal')).show();
+    
+    // Fetch logs
+    fetch('/api/sms-logs?limit=50')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const logsData = data.data;
+                let content = '';
+                
+                if (logsData.results && logsData.results.length > 0) {
+                    content = `
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Message ID</th>
+                                        <th>From</th>
+                                        <th>To</th>
+                                        <th>Status</th>
+                                        <th>Sent At</th>
+                                        <th>Channel</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    logsData.results.forEach(log => {
+                        const statusClass = getStatusBadgeClass(log.status?.groupName || '');
+                        content += `
+                            <tr>
+                                <td><small>${log.messageId || 'N/A'}</small></td>
+                                <td>${log.from || 'N/A'}</td>
+                                <td>${log.to || 'N/A'}</td>
+                                <td><span class="badge bg-${statusClass}">${log.status?.name || 'N/A'}</span></td>
+                                <td><small>${log.sentAt || 'N/A'}</small></td>
+                                <td><small>${log.channel || 'N/A'}</small></td>
+                            </tr>
+                        `;
+                    });
+                    
+                    content += `
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">Showing ${logsData.results.length} recent logs</small>
+                        </div>
+                    `;
+                } else {
+                    content = '<div class="text-center text-muted">No SMS logs found</div>';
+                }
+                
+                document.getElementById('smsLogsContent').innerHTML = content;
+            } else {
+                document.getElementById('smsLogsContent').innerHTML = '<div class="text-center text-danger">Failed to load SMS logs: ' + data.message + '</div>';
+            }
+        })
+        .catch(error => {
+            document.getElementById('smsLogsContent').innerHTML = '<div class="text-center text-danger">Error loading SMS logs: ' + error.message + '</div>';
+        });
+}
+
+// Helper function to get status badge color
+function getStatusBadgeClass(status) {
+    switch (status?.toLowerCase()) {
+        case 'delivered':
+            return 'success';
+        case 'sent':
+        case 'enroute':
+            return 'info';
+        case 'failed':
+        case 'rejected':
+            return 'danger';
+        case 'pending':
+        case 'accepted':
+            return 'warning';
+        default:
+            return 'secondary';
+    }
+}
 </script>
+
+<!-- SMS Balance Modal -->
+<div class="modal fade" id="smsBalanceModal" tabindex="-1" aria-labelledby="smsBalanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="smsBalanceModalLabel">
+                    <i class="bx bx-wallet me-2"></i>SMS Balance
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="smsBalanceContent">
+                <!-- Balance content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SMS Logs Modal -->
+<div class="modal fade" id="smsLogsModal" tabindex="-1" aria-labelledby="smsLogsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="smsLogsModalLabel">
+                    <i class="bx bx-history me-2"></i>SMS Logs
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="smsLogsContent">
+                <!-- Logs content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endpush
 @endsection

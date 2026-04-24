@@ -524,6 +524,9 @@
     </div>
 </div>
 
+
+
+
 @push('scripts')
 <script>
 // Auto-refresh data every 30 seconds
