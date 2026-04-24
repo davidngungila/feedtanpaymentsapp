@@ -560,11 +560,68 @@ window.sendEmail = function() {
         is_test: document.getElementById('email_test_mode').checked
     };
 
-    // Show loading
+    // Show loading with progress tracking
     const submitBtn = document.querySelector('#emailForm button[type="submit"]');
     const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin me-2"></i>Sending...';
     submitBtn.disabled = true;
+    
+    // Create progress indicator
+    const progressDiv = document.createElement('div');
+    progressDiv.className = 'progress-container mt-3';
+    progressDiv.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="progress-text">Preparing email...</span>
+            <span class="progress-percent">0%</span>
+        </div>
+        <div class="progress" style="height: 6px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+        </div>
+    `;
+    
+    // Insert progress indicator after the button
+    submitBtn.parentNode.insertBefore(progressDiv, submitBtn.nextSibling);
+    
+    const progressBar = progressDiv.querySelector('.progress-bar');
+    const progressText = progressDiv.querySelector('.progress-text');
+    const progressPercent = progressDiv.querySelector('.progress-percent');
+    
+    // Progress tracking function
+    function updateProgress(percent, text) {
+        progressBar.style.width = percent + '%';
+        progressPercent.textContent = percent + '%';
+        progressText.textContent = text;
+        submitBtn.innerHTML = `<i class="bx bx-loader-alt bx-spin me-2"></i>${text}`;
+    }
+    
+    // Start progress tracking
+    let progress = 0;
+    const progressSteps = [
+        { percent: 10, text: 'Validating data...' },
+        { percent: 25, text: 'Connecting to email service...' },
+        { percent: 40, text: 'Preparing email content...' },
+        { percent: 60, text: 'Sending email...' },
+        { percent: 80, text: 'Confirming delivery...' },
+        { percent: 95, text: 'Finalizing...' },
+        { percent: 100, text: 'Complete!' }
+    ];
+    
+    // Simulate progress updates
+    let currentStep = 0;
+    const progressInterval = setInterval(() => {
+        if (currentStep < progressSteps.length) {
+            const step = progressSteps[currentStep];
+            updateProgress(step.percent, step.text);
+            currentStep++;
+        } else {
+            clearInterval(progressInterval);
+        }
+    }, 800);
+    
+    // Set timeout for long-running operations
+    const timeout = setTimeout(() => {
+        updateProgress(50, 'Still sending... Please wait...');
+        showNotification('Email sending is taking longer than expected. Please wait...', 'warning');
+    }, 10000);
 
     fetch('/messaging/email/send', {
         method: 'POST',
@@ -574,23 +631,96 @@ window.sendEmail = function() {
         },
         body: JSON.stringify(data)
     })
-    .then(response => response.json())
+    .then(response => {
+        clearTimeout(timeout);
+        clearInterval(progressInterval);
+        updateProgress(90, 'Processing response...');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
+        updateProgress(100, 'Complete!');
+        
         if (data.success) {
             showNotification('Email sent successfully!', 'success');
             document.getElementById('emailForm').reset();
             updateCharCountEmail();
             refreshEmailMessages();
+            
+            // Show success splash
+            setTimeout(() => {
+                progressDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="bx bx-check-circle me-2"></i>
+                        <strong>Email sent successfully!</strong><br>
+                        <small>Your email has been delivered to the recipient.</small>
+                    </div>
+                `;
+                
+                // Remove success message after 3 seconds
+                setTimeout(() => {
+                    if (progressDiv.parentNode) {
+                        progressDiv.parentNode.removeChild(progressDiv);
+                    }
+                }, 3000);
+            }, 500);
+            
         } else {
             showNotification('Failed to send email: ' + data.message, 'error');
+            
+            // Show error message
+            progressDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bx bx-error-circle me-2"></i>
+                    <strong>Email sending failed</strong><br>
+                    <small>${data.message}</small>
+                </div>
+            `;
+            
+            // Remove error message after 5 seconds
+            setTimeout(() => {
+                if (progressDiv.parentNode) {
+                    progressDiv.parentNode.removeChild(progressDiv);
+                }
+            }, 5000);
         }
     })
     .catch(error => {
+        clearTimeout(timeout);
+        clearInterval(progressInterval);
+        updateProgress(0, 'Failed');
+        
         showNotification('Error sending email: ' + error.message, 'error');
+        
+        // Show error message
+        progressDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bx bx-error-circle me-2"></i>
+                <strong>Connection error</strong><br>
+                <small>${error.message}</small>
+            </div>
+        `;
+        
+        // Remove error message after 5 seconds
+        setTimeout(() => {
+            if (progressDiv.parentNode) {
+                progressDiv.parentNode.removeChild(progressDiv);
+            }
+        }, 5000);
     })
     .finally(() => {
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
+        
+        // Clean up progress indicator if still present after 10 seconds
+        setTimeout(() => {
+            if (progressDiv.parentNode) {
+                progressDiv.parentNode.removeChild(progressDiv);
+            }
+        }, 10000);
     });
 }
 

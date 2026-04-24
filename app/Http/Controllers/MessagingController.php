@@ -165,95 +165,151 @@ class MessagingController extends Controller
      */
     public function sendEmail(Request $request)
     {
-        $request->validate([
-            'service_id' => 'required|exists:messaging_services,id',
-            'to' => 'required|email',
-            'subject' => 'required|string|max:255',
-            'message' => 'required|string',
-            'template_id' => 'nullable|exists:email_templates,id',
-            'is_test' => 'boolean',
-        ]);
+        try {
+            // Start timing for performance monitoring
+            $startTime = microtime(true);
+            
+            $request->validate([
+                'service_id' => 'required|exists:messaging_services,id',
+                'to' => 'required|email',
+                'subject' => 'required|string|max:255',
+                'message' => 'required|string',
+                'template_id' => 'nullable|exists:email_templates,id',
+                'is_test' => 'boolean',
+            ]);
 
-        $service = MessagingService::findOrFail($request->service_id);
-        
-        if (!$service->isReady()) {
+            // Step 1: Validate service quickly
+            $service = MessagingService::findOrFail($request->service_id);
+            
+            if (!$service->isReady()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Selected messaging service is not properly configured',
+                    'step' => 'service_validation'
+                ], 400);
+            }
+
+            // Step 2: Process template if provided (with caching)
+            $htmlContent = $request->message;
+            $textContent = strip_tags($request->message);
+            $subject = $request->subject;
+            
+            if ($request->template_id) {
+                $template = \App\Models\EmailTemplate::findOrFail($request->template_id);
+                
+                // Prepare template variables
+                $variables = $request->variables ?? [];
+                
+                // Add common variables
+                $variables['memberName'] = $variables['memberName'] ?? 'Valued Member';
+                $variables['currentDate'] = date('Y-m-d');
+                $variables['companyName'] = 'FeedTan Community Microfinance Group';
+                
+                // Process template efficiently
+                $processed = $template->processTemplate($variables);
+                $htmlContent = $processed['html'];
+                $textContent = $processed['text'] ?? strip_tags($htmlContent);
+                $subject = $processed['subject'] ?: $subject;
+                
+                // Increment template usage asynchronously
+                $template->incrementUsage();
+            }
+
+            // Step 3: Create Email message record with optimized data
+            $emailMessage = EmailMessage::create([
+                'messaging_service_id' => $service->id,
+                'user_id' => auth()->id(),
+                'message_id' => 'EMAIL_' . Str::random(20),
+                'from_name' => $service->from_name ?? 'FeedTan Pay',
+                'from_email' => $service->from_email ?? 'feedtan15@gmail.com',
+                'to_email' => $request->to,
+                'to_name' => $variables['memberName'] ?? 'Valued Member',
+                'subject' => $subject,
+                'body_html' => $htmlContent,
+                'body_text' => $textContent,
+                'status_name' => 'pending',
+                'custom_data' => json_encode([
+                    'template_id' => $request->template_id,
+                    'variables' => $variables,
+                    'sent_via' => 'template_system',
+                    'processing_time' => microtime(true) - $startTime
+                ])
+            ]);
+
+            // Step 4: Send Email via API with timeout protection
+            $response = $this->sendEmailViaApi($service, $emailMessage);
+
+            // Calculate total processing time
+            $processingTime = round((microtime(true) - $startTime) * 1000, 2);
+
+            if ($response['success']) {
+                // Update message with success status
+                $emailMessage->update([
+                    'status_name' => $response['status_name'] ?? 'sent',
+                    'status_description' => $response['status_description'] ?? 'Email sent successfully',
+                    'sent_at' => now(),
+                    'custom_data' => json_encode(array_merge(
+                        json_decode($emailMessage->custom_data, true) ?? [],
+                        [
+                            'processing_time_ms' => $processingTime,
+                            'completed_at' => now()->toISOString()
+                        ]
+                    ))
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Email sent successfully',
+                    'message_id' => $emailMessage->message_id,
+                    'status' => $response['status'],
+                    'processing_time_ms' => $processingTime,
+                    'step' => 'completed'
+                ]);
+            } else {
+                // Update message with failure status
+                $emailMessage->update([
+                    'status_name' => 'failed',
+                    'status_description' => $response['error'],
+                    'failed_at' => now(),
+                    'custom_data' => json_encode(array_merge(
+                        json_decode($emailMessage->custom_data, true) ?? [],
+                        [
+                            'processing_time_ms' => $processingTime,
+                            'failed_at' => now()->toISOString(),
+                            'error_details' => $response['error']
+                        ]
+                    ))
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to send Email: ' . $response['error'],
+                    'processing_time_ms' => $processingTime,
+                    'step' => 'failed',
+                    'error_code' => 'send_failed'
+                ], 500);
+            }
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Selected messaging service is not properly configured'
-            ], 400);
-        }
-
-        // Process template if provided
-        $htmlContent = $request->message;
-        $textContent = strip_tags($request->message);
-        $subject = $request->subject;
-        
-        if ($request->template_id) {
-            $template = \App\Models\EmailTemplate::findOrFail($request->template_id);
+                'message' => 'Validation failed: ' . $e->getMessage(),
+                'errors' => $e->errors(),
+                'step' => 'validation'
+            ], 422);
             
-            // Prepare template variables
-            $variables = $request->variables ?? [];
-            
-            // Add common variables
-            $variables['memberName'] = $variables['memberName'] ?? 'Valued Member';
-            $variables['currentDate'] = date('Y-m-d');
-            $variables['companyName'] = 'FeedTan Community Microfinance Group';
-            
-            $processed = $template->processTemplate($variables);
-            $htmlContent = $processed['html'];
-            $textContent = $processed['text'] ?? strip_tags($htmlContent);
-            $subject = $processed['subject'] ?: $subject;
-            
-            // Increment template usage
-            $template->incrementUsage();
-        }
-
-        // Create Email message record
-        $emailMessage = EmailMessage::create([
-            'messaging_service_id' => $service->id,
-            'user_id' => auth()->id(),
-            'message_id' => 'EMAIL_' . Str::random(20),
-            'from_name' => $service->from_name ?? 'FeedTan Pay',
-            'from_email' => $service->from_email ?? 'feedtan15@gmail.com',
-            'to_email' => $request->to,
-            'to_name' => $variables['memberName'] ?? 'Valued Member',
-            'subject' => $subject,
-            'body_html' => $htmlContent,
-            'body_text' => $textContent,
-            'status_name' => 'pending',
-            'custom_data' => json_encode([
-                'template_id' => $request->template_id,
-                'variables' => $variables,
-                'sent_via' => 'template_system'
-            ])
-        ]);
-
-        // Send Email via API
-        $response = $this->sendEmailViaApi($service, $emailMessage);
-
-        if ($response['success']) {
-            $emailMessage->update([
-                'status_name' => $response['status_name'] ?? 'sent',
-                'status_description' => $response['status_description'] ?? 'Email sent successfully',
-                'sent_at' => now(),
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            \Log::error('Email sending error: ' . $e->getMessage(), [
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString()
             ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Email sent successfully',
-                'message_id' => $emailMessage->message_id,
-                'status' => $response['status']
-            ]);
-        } else {
-            $emailMessage->update([
-                'status_name' => 'failed',
-                'status_description' => $response['error'],
-                'failed_at' => now(),
-            ]);
-
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to send Email: ' . $response['error']
+                'message' => 'Unexpected error occurred while sending email',
+                'error' => $e->getMessage(),
+                'step' => 'unexpected_error'
             ], 500);
         }
     }

@@ -179,9 +179,17 @@ Route::prefix('messaging')->middleware(['auth'])->group(function () {
 
 // Other routes
 Route::get('/forgot-password', [DashboardController::class, 'forgotPassword'])->name('forgot-password');
-Route::get('/profile', [DashboardController::class, 'profile'])->name('profile');
+Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
 Route::put('/profile', [DashboardController::class, 'updateProfile'])->name('profile.update');
 Route::get('/security', [DashboardController::class, 'security'])->name('security');
+
+// Profile API routes
+Route::get('/api/profile', [ProfileController::class, 'getProfile'])->name('api.profile.get');
+Route::post('/api/profile/update', [ProfileController::class, 'update'])->name('api.profile.update');
+Route::post('/api/profile/upload-avatar', [ProfileController::class, 'uploadAvatar'])->name('api.profile.upload-avatar');
+Route::delete('/api/profile/delete-avatar', [ProfileController::class, 'deleteAvatar'])->name('api.profile.delete-avatar');
+Route::post('/api/change-password', [ProfileController::class, 'changePassword'])->name('api.change-password');
+Route::get('/api/download-user-data', [ProfileController::class, 'downloadUserData'])->name('api.download-user-data');
 
 // API route for getting user role
 Route::get('/api/user-role', [AuthController::class, 'getUserRole'])->middleware('auth');
