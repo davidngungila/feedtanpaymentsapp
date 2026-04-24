@@ -24,14 +24,14 @@
             </a>
         </li>
 
-        <!-- Payments -->
-        <li class="menu-item {{ request()->routeIs('payments*') ? 'active open' : '' }}">
+        <!-- ClickPesa -->
+        <li class="menu-item {{ request()->routeIs('payments*') ? 'active open' : '' }} {{ request()->routeIs('report*') ? 'active open' : '' }}">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons bx bx-credit-card"></i>
-                <div class="text-truncate" data-i18n="Payments">Payments</div>
+                <div class="text-truncate" data-i18n="ClickPesa">ClickPesa</div>
             </a>
             <ul class="menu-sub">
-                <li class="menu-item {{ request()->routeIs('payments.initiate') ? 'active' : '' }}">
+                                <li class="menu-item {{ request()->routeIs('payments.initiate') ? 'active' : '' }}">
                     <a href="{{ route('payments.initiate') }}" class="menu-link">
                         <div class="text-truncate" data-i18n="Initiate Payment">Initiate Payment</div>
                     </a>
@@ -41,36 +41,6 @@
                         <div class="text-truncate" data-i18n="Payment History">Payment History</div>
                     </a>
                 </li>
-            </ul>
-        </li>
-
-        <!-- Payouts -->
-        <li class="menu-item {{ request()->routeIs('payouts*') ? 'active open' : '' }}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
-                <div class="text-truncate" data-i18n="Payouts">Payouts</div>
-            </a>
-            <ul class="menu-sub">
-                <li class="menu-item {{ request()->routeIs('payouts.initiate') ? 'active' : '' }}">
-                    <a href="{{ route('payouts.initiate') }}" class="menu-link">
-                        <div class="text-truncate" data-i18n="Initiate Payout">Initiate Payout</div>
-                    </a>
-                </li>
-                <li class="menu-item {{ request()->routeIs('payouts.history') ? 'active' : '' }}">
-                    <a href="{{ route('payouts.history') }}" class="menu-link">
-                        <div class="text-truncate" data-i18n="Payout History">Payout History</div>
-                    </a>
-                </li>
-            </ul>
-        </li>
-
-        <!-- BillPay -->
-        <li class="menu-item {{ request()->routeIs('billpay*') ? 'active open' : '' }}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-file"></i>
-                <div class="text-truncate" data-i18n="BillPay">BillPay</div>
-            </a>
-            <ul class="menu-sub">
                 <li class="menu-item {{ request()->routeIs('billpay.all') ? 'active' : '' }}">
                     <a href="{{ route('billpay.all') }}" class="menu-link">
                         <div class="text-truncate" data-i18n="All Bills">All Bills</div>
@@ -79,26 +49,6 @@
                 <li class="menu-item {{ request()->routeIs('billpay.create') ? 'active' : '' }}">
                     <a href="{{ route('billpay.create') }}" class="menu-link">
                         <div class="text-truncate" data-i18n="Create Bill">Create Bill</div>
-                    </a>
-                </li>
-            </ul>
-        </li>
-
-        <!-- Report -->
-        <li class="menu-item {{ request()->routeIs('report*') ? 'active open' : '' }}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-chart"></i>
-                <div class="text-truncate" data-i18n="Report">Report</div>
-            </a>
-            <ul class="menu-sub">
-                <li class="menu-item {{ request()->routeIs('report.overview') ? 'active' : '' }}">
-                    <a href="{{ route('report.overview') }}" class="menu-link">
-                        <div class="text-truncate" data-i18n="Overview">Overview</div>
-                    </a>
-                </li>
-                <li class="menu-item {{ request()->routeIs('report.balance') ? 'active' : '' }}">
-                    <a href="{{ route('report.balance') }}" class="menu-link">
-                        <div class="text-truncate" data-i18n="Balance">Balance</div>
                     </a>
                 </li>
                 <li class="menu-item {{ request()->routeIs('report.statement') ? 'active' : '' }}">

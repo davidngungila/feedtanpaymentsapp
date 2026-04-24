@@ -33,6 +33,15 @@ class Kernel extends ConsoleKernel
 
         // Register the SMS sync command
         $this->registerCommand(\App\Console\Commands\SyncSmsCommand::class);
+        
+        // Register the test payment command
+        $this->registerCommand(\App\Console\Commands\TestPaymentCommand::class);
+        
+        // Register the test payment status command
+        $this->registerCommand(\App\Console\Commands\TestPaymentStatusCommand::class);
+        
+        // Register the sync payments command
+        $this->registerCommand(\App\Console\Commands\SyncPaymentsCommand::class);
 
         require base_path('routes/console.php');
     }

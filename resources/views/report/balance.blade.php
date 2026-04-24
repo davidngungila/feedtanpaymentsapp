@@ -15,13 +15,17 @@
                 <div class="row">
                     <div class="col-md-4">
                         <div class="text-center">
-                            <h2 class="mb-2 text-primary">$12,458.50</h2>
+                            @if(!empty($balance))
+                                <h2 class="mb-2 text-primary">{{ number_format($balance[0]['balance'] ?? 0, 2) }} {{ $balance[0]['currency'] ?? 'TZS' }}</h2>
+                            @else
+                                <h2 class="mb-2 text-primary">0.00 TZS</h2>
+                            @endif
                             <p class="text-muted">Current Balance</p>
                             <div class="d-flex justify-content-center gap-2">
                                 <span class="badge bg-success">
-                                    <i class="bx bx-trending-up"></i> +12.5%
+                                    <i class="bx bx-info-circle"></i> Live Data
                                 </span>
-                                <small class="text-muted">vs last month</small>
+                                <small class="text-muted">from ClickPesa API</small>
                             </div>
                         </div>
                     </div>
@@ -37,56 +41,43 @@
 <div class="row">
     <!-- Account Details -->
     <div class="col-md-8">
-        <!-- Account Cards -->
+        <!-- Currency Statistics -->
         <div class="row mb-6">
-            <div class="col-md-6">
-                <div class="card border-primary">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <h6 class="mb-0">Primary Account</h6>
-                                <small class="text-muted">****1234</small>
+            @forelse($currencyStats as $stat)
+                <div class="col-md-6 mb-4">
+                    <div class="card border-primary">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h6 class="mb-0">{{ $stat->currency }} Account</h6>
+                                    <small class="text-muted">{{ $stat->count }} transactions</small>
+                                </div>
+                                <div class="avatar bg-primary bg-opacity-10 rounded-circle">
+                                    <i class="bx bx-wallet text-primary"></i>
+                                </div>
                             </div>
-                            <div class="avatar bg-primary bg-opacity-10 rounded-circle">
-                                <i class="bx bx-credit-card text-primary"></i>
+                            <h4 class="mb-3">{{ number_format($stat->total, 2) }} {{ $stat->currency }}</h4>
+                            <div class="d-flex justify-content-between mb-2">
+                                <small class="text-muted">Transaction Count</small>
+                                <strong>{{ $stat->count }}</strong>
                             </div>
-                        </div>
-                        <h4 class="mb-3">$8,234.75</h4>
-                        <div class="d-flex justify-content-between mb-2">
-                            <small class="text-muted">Available</small>
-                            <strong>$8,234.75</strong>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <small class="text-muted">Pending</small>
-                            <strong>$0.00</strong>
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">Average Amount</small>
+                                <strong>{{ number_format($stat->count > 0 ? $stat->total / $stat->count : 0, 2) }} {{ $stat->currency }}</strong>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card border-success">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <h6 class="mb-0">Savings Account</h6>
-                                <small class="text-muted">****5678</small>
-                            </div>
-                            <div class="avatar bg-success bg-opacity-10 rounded-circle">
-                                <i class="bx bx-piggy-bank text-success"></i>
-                            </div>
-                        </div>
-                        <h4 class="mb-3">$4,223.75</h4>
-                        <div class="d-flex justify-content-between mb-2">
-                            <small class="text-muted">Available</small>
-                            <strong>$4,223.75</strong>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <small class="text-muted">Interest Rate</small>
-                            <strong>2.5% APY</strong>
+            @empty
+                <div class="col-md-12">
+                    <div class="card border-secondary">
+                        <div class="card-body text-center">
+                            <i class="bx bx-info-circle fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">No currency statistics available</p>
                         </div>
                     </div>
                 </div>
-            </div>
+            @endforelse
         </div>
 
         <!-- Balance History -->

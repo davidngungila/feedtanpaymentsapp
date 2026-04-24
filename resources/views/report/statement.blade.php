@@ -4,6 +4,12 @@
 @section('description', 'FeedTan Pay - Download and view account statements')
 
 @section('content')
+<div class="alert alert-info">
+    <strong>Debug Info:</strong>
+    Monthly Statements Count: {{ $monthlyStatements->count() ?? 0 }} |
+    Selected Month: {{ $selectedMonth ?? 'None' }} |
+    Currency: {{ $currency ?? 'TZS' }}
+</div>
 <div class="row">
     <div class="col-md-12">
         <div class="card">
@@ -22,246 +28,203 @@
                 <!-- Period Selection -->
                 <div class="row mb-4">
                     <div class="col-md-4">
-                        <label class="form-label">Select Period</label>
-                        <select class="form-select" id="periodSelect" onchange="filterStatements()">
-                            <option value="all">All Statements</option>
-                            <option value="current">Current Month</option>
-                            <option value="last30">Last 30 Days</option>
-                            <option value="last90">Last 90 Days</option>
-                            <option value="ytd">Year to Date</option>
-                            <option value="custom">Custom Range</option>
+                        <label class="form-label">Select Month</label>
+                        <select class="form-select" id="monthSelect" onchange="selectMonth()">
+                            @forelse($monthlyStatements as $monthly)
+                                <option value="{{ $monthly['month'] }}" {{ ($selectedMonth ?? '') === $monthly['month'] ? 'selected' : '' }}>
+                                    {{ $monthly['month_name'] }} ({{ $monthly['transaction_count'] }} transactions)
+                                </option>
+                            @empty
+                                <option value="">No data available</option>
+                            @endforelse
                         </select>
-                    </div>
-                    <div class="col-md-4" id="customRange" style="display: none;">
-                        <label class="form-label">Custom Range</label>
-                        <div class="d-flex gap-2">
-                            <input type="date" class="form-control" id="dateFrom">
-                            <input type="date" class="form-control" id="dateTo">
-                        </div>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Account</label>
-                        <select class="form-select" id="accountSelect" onchange="filterStatements()">
-                            <option value="all">All Accounts</option>
-                            <option value="primary">Primary Account</option>
-                            <option value="savings">Savings Account</option>
+                        <label class="form-label">Currency</label>
+                        <select class="form-select" id="currency" onchange="updateStatement()">
+                            <option value="TZS" {{ ($currency ?? 'TZS') === 'TZS' ? 'selected' : '' }}>TZS</option>
+                            <option value="USD" {{ ($currency ?? 'TZS') === 'USD' ? 'selected' : '' }}>USD</option>
                         </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-primary btn-sm" onclick="exportPDF()">
+                                <i class="bx bx-file-blank me-1"></i>PDF
+                            </button>
+                            <button class="btn btn-outline-success btn-sm" onclick="exportExcel()">
+                                <i class="bx bx-spreadsheet me-1"></i>Excel
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Statements List -->
-                <div class="table-responsive">
-                    <table class="table table-hover" id="statementsTable">
+                <!-- Monthly Statements -->
+                <div class="table-responsive mb-4">
+                    <table class="table table-hover" id="monthlyStatementsTable">
                         <thead>
                             <tr>
-                                <th>Period</th>
-                                <th>Account</th>
-                                <th>Opening Balance</th>
-                                <th>Closing Balance</th>
+                                <th>Month</th>
                                 <th>Transactions</th>
-                                <th>Status</th>
+                                <th>Total Amount</th>
+                                <th>Success</th>
+                                <th>Pending</th>
+                                <th>Failed</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>
-                                    <div>
-                                        <h6 class="mb-0">December 2024</h6>
-                                        <small class="text-muted">Dec 1 - Dec 15, 2024</small>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-label-primary">Primary Account</span>
-                                </td>
-                                <td>$3,234.75</td>
-                                <td><strong>$8,234.75</strong></td>
-                                <td>47</td>
-                                <td>
-                                    <span class="badge bg-success">Available</span>
-                                </td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <button class="btn btn-sm btn-outline-primary" onclick="viewStatement('2024-12-primary')">
-                                            <i class="bx bx-eye"></i>
+                            @forelse($monthlyStatements as $monthly)
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <h6 class="mb-0">{{ $monthly['month_name'] }}</h6>
+                                            <small class="text-muted">{{ $monthly['month'] }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ $monthly['has_data'] ? 'primary' : 'secondary' }}">
+                                            {{ $monthly['transaction_count'] }}
+                                        </span>
+                                    </td>
+                                    <td><strong>{{ number_format($monthly['total_amount'], 2) }} {{ $currency }}</strong></td>
+                                    <td>
+                                        <span class="text-success">{{ number_format($monthly['success_amount'], 2) }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-warning">{{ number_format($monthly['pending_amount'], 2) }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-danger">{{ number_format($monthly['failed_amount'], 2) }}</span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="viewMonthDetails('{{ $monthly['month'] }}')">
+                                            <i class="bx bx-eye"></i> View
                                         </button>
-                                        <button class="btn btn-sm btn-outline-success" onclick="downloadStatement('2024-12-primary')">
-                                            <i class="bx bx-download"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-info" onclick="emailStatement('2024-12-primary')">
-                                            <i class="bx bx-envelope"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div>
-                                        <h6 class="mb-0">November 2024</h6>
-                                        <small class="text-muted">Nov 1 - Nov 30, 2024</small>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-label-primary">Primary Account</span>
-                                </td>
-                                <td>$2,890.25</td>
-                                <td><strong>$3,234.75</strong></td>
-                                <td>62</td>
-                                <td>
-                                    <span class="badge bg-success">Available</span>
-                                </td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <button class="btn btn-sm btn-outline-primary" onclick="viewStatement('2024-11-primary')">
-                                            <i class="bx bx-eye"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-success" onclick="downloadStatement('2024-11-primary')">
-                                            <i class="bx bx-download"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-info" onclick="emailStatement('2024-11-primary')">
-                                            <i class="bx bx-envelope"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div>
-                                        <h6 class="mb-0">October 2024</h6>
-                                        <small class="text-muted">Oct 1 - Oct 31, 2024</small>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-label-primary">Primary Account</span>
-                                </td>
-                                <td>$2,456.80</td>
-                                <td><strong>$2,890.25</strong></td>
-                                <td>58</td>
-                                <td>
-                                    <span class="badge bg-success">Available</span>
-                                </td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <button class="btn btn-sm btn-outline-primary" onclick="viewStatement('2024-10-primary')">
-                                            <i class="bx bx-eye"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-success" onclick="downloadStatement('2024-10-primary')">
-                                            <i class="bx bx-download"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-info" onclick="emailStatement('2024-10-primary')">
-                                            <i class="bx bx-envelope"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div>
-                                        <h6 class="mb-0">December 2024</h6>
-                                        <small class="text-muted">Dec 1 - Dec 15, 2024</small>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-label-success">Savings Account</span>
-                                </td>
-                                <td>$3,890.25</td>
-                                <td><strong>$4,223.75</strong></td>
-                                <td>12</td>
-                                <td>
-                                    <span class="badge bg-success">Available</span>
-                                </td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <button class="btn btn-sm btn-outline-primary" onclick="viewStatement('2024-12-savings')">
-                                            <i class="bx bx-eye"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-success" onclick="downloadStatement('2024-12-savings')">
-                                            <i class="bx bx-download"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-info" onclick="emailStatement('2024-12-savings')">
-                                            <i class="bx bx-envelope"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div>
-                                        <h6 class="mb-0">November 2024</h6>
-                                        <small class="text-muted">Nov 1 - Nov 30, 2024</small>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-label-success">Savings Account</span>
-                                </td>
-                                <td>$3,546.80</td>
-                                <td><strong>$3,890.25</strong></td>
-                                <td>8</td>
-                                <td>
-                                    <span class="badge bg-success">Available</span>
-                                </td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <button class="btn btn-sm btn-outline-primary" onclick="viewStatement('2024-11-savings')">
-                                            <i class="bx bx-eye"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-success" onclick="downloadStatement('2024-11-savings')">
-                                            <i class="bx bx-download"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-info" onclick="emailStatement('2024-11-savings')">
-                                            <i class="bx bx-envelope"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div>
-                                        <h6 class="mb-0">October 2024</h6>
-                                        <small class="text-muted">Oct 1 - Oct 31, 2024</small>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-label-success">Savings Account</span>
-                                </td>
-                                <td>$3,234.75</td>
-                                <td><strong>$3,546.80</strong></td>
-                                <td>10</td>
-                                <td>
-                                    <span class="badge bg-success">Available</span>
-                                </td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <button class="btn btn-sm btn-outline-primary" onclick="viewStatement('2024-10-savings')">
-                                            <i class="bx bx-eye"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-success" onclick="downloadStatement('2024-10-savings')">
-                                            <i class="bx bx-download"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-info" onclick="emailStatement('2024-10-savings')">
-                                            <i class="bx bx-envelope"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="text-center">
+                                        <div class="py-4">
+                                            <i class="bx bx-calendar fa-3x text-muted mb-3"></i>
+                                            <p class="text-muted mb-0">No monthly data available</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
 
-                <!-- Pagination -->
-                <nav aria-label="Page navigation" class="mt-4">
-                    <ul class="pagination justify-content-center">
-                        <li class="page-item disabled">
-                            <a class="page-link" href="#" tabindex="-1">Previous</a>
-                        </li>
-                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                        <li class="page-item">
-                            <a class="page-link" href="#">Next</a>
-                        </li>
-                    </ul>
-                </nav>
+                <!-- Monthly Reconciliation Summary -->
+                @if(isset($monthlyTotals) && ($monthlyTotals['total_count'] ?? 0) > 0)
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                Monthly Reconciliation - {{ \Carbon\Carbon::parse($selectedMonth . '-01')->format('F Y') }}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="card border-primary">
+                                        <div class="card-body text-center">
+                                            <h6 class="card-title">Total Transactions</h6>
+                                            <h3 class="text-primary">{{ $monthlyTotals['total_count'] }}</h3>
+                                            <p class="text-muted mb-0">{{ number_format($monthlyTotals['total_amount'], 2) }} {{ $currency }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card border-success">
+                                        <div class="card-body text-center">
+                                            <h6 class="card-title">Successful</h6>
+                                            <h3 class="text-success">{{ $monthlyTotals['success_count'] }}</h3>
+                                            <p class="text-muted mb-0">{{ number_format($monthlyTotals['success_amount'], 2) }} {{ $currency }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card border-warning">
+                                        <div class="card-body text-center">
+                                            <h6 class="card-title">Pending</h6>
+                                            <h3 class="text-warning">{{ $monthlyTotals['pending_count'] }}</h3>
+                                            <p class="text-muted mb-0">{{ number_format($monthlyTotals['pending_amount'], 2) }} {{ $currency }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card border-danger">
+                                        <div class="card-body text-center">
+                                            <h6 class="card-title">Failed</h6>
+                                            <h3 class="text-danger">{{ $monthlyTotals['failed_count'] }}</h3>
+                                            <p class="text-muted mb-0">{{ number_format($monthlyTotals['failed_amount'], 2) }} {{ $currency }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                <!-- Selected Month Transactions -->
+                @if($selectedMonthTransactions->count() > 0)
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                All Transactions for {{ \Carbon\Carbon::parse($selectedMonth . '-01')->format('F Y') }}
+                                <small class="text-muted">({{ $selectedMonthTransactions->count() }} transactions)</small>
+                            </h5>
+                            <div>
+                                <button class="btn btn-sm btn-outline-success" onclick="exportMonthData('{{ $selectedMonth }}', 'pdf')">
+                                    <i class="bx bx-file"></i> PDF
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="exportMonthData('{{ $selectedMonth }}', 'excel')">
+                                    <i class="bx bx-spreadsheet"></i> Excel
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Order Ref</th>
+                                            <th>Payer</th>
+                                            <th>Phone</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                            <th>Method</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($selectedMonthTransactions as $transaction)
+                                            <tr>
+                                                <td>{{ $transaction->created_at->format('M j, Y H:i') }}</td>
+                                                <td><code>{{ $transaction->order_reference }}</code></td>
+                                                <td>{{ $transaction->payer_name ?? 'Unknown' }}</td>
+                                                <td>{{ $transaction->phone ?? 'N/A' }}</td>
+                                                <td><strong>{{ number_format($transaction->amount, 2) }} {{ $transaction->currency }}</strong></td>
+                                                <td>
+                                                    <span class="badge bg-{{ $transaction->status === 'SUCCESS' || $transaction->status === 'SETTLED' ? 'success' : ($transaction->status === 'PROCESSING' || $transaction->status === 'PENDING' ? 'warning' : 'danger') }}">
+                                                        {{ $transaction->status }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ $transaction->payment_method ?? 'N/A' }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="7" class="text-center">No transactions found</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -488,6 +451,12 @@ function viewStatement(statementId) {
     }, 1000);
 }
 
+function exportMonthData(month, format) {
+    const currency = document.getElementById('currency').value;
+    const url = `/report/statement/export?month=${month}&format=${format}&currency=${currency}`;
+    window.open(url, '_blank');
+}
+
 function downloadStatement(statementId) {
     alert('Downloading statement: ' + statementId);
 }
@@ -532,6 +501,40 @@ function sendEmail() {
     // Close modal
     const modal = bootstrap.Modal.getInstance(document.getElementById('emailModal'));
     modal.hide();
+}
+
+function selectMonth() {
+    const monthSelect = document.getElementById('monthSelect');
+    const currency = document.getElementById('currency').value;
+    
+    if (monthSelect.value) {
+        window.location.href = `/report/statement?month=${monthSelect.value}&currency=${currency}`;
+    }
+}
+
+function updateStatement() {
+    const monthSelect = document.getElementById('monthSelect');
+    const currency = document.getElementById('currency').value;
+    
+    window.location.href = `/report/statement?month=${monthSelect.value}&currency=${currency}`;
+}
+
+function viewMonthDetails(month) {
+    window.location.href = `/report/statement?month=${month}`;
+}
+
+function exportPDF() {
+    const month = document.getElementById('monthSelect').value;
+    const currency = document.getElementById('currency').value;
+    
+    window.open(`/report/statement/export?format=pdf&month=${month}&currency=${currency}`, '_blank');
+}
+
+function exportExcel() {
+    const month = document.getElementById('monthSelect').value;
+    const currency = document.getElementById('currency').value;
+    
+    window.open(`/report/statement/export?format=excel&month=${month}&currency=${currency}`, '_blank');
 }
 
 function toggleAllStatements() {

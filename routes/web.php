@@ -4,6 +4,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MessagingController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\BillPayController;
+use App\Http\Controllers\StatementController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -24,19 +27,32 @@ Route::get('/account-settings/notifications', [DashboardController::class, 'noti
 Route::get('/account-settings/connections', [DashboardController::class, 'connections'])->name('account-settings.connections');
 
 // Payment routes
-Route::get('/payments/initiate', [DashboardController::class, 'initiatePayment'])->name('payments.initiate');
-Route::get('/payments/history', [DashboardController::class, 'paymentHistory'])->name('payments.history');
+Route::get('/payments/initiate', [PaymentController::class, 'initiate'])->name('payments.initiate');
+Route::post('/payments/initiate', [PaymentController::class, 'processInitiate'])->name('payments.process.initiate');
+Route::get('/payments/status', [PaymentController::class, 'status'])->name('payments.status');
+Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
+Route::post('/payments/sync-api', [PaymentController::class, 'syncFromAPI'])->name('payments.sync.api');
+Route::get('/payments/export/pdf', [PaymentController::class, 'exportPdf'])->name('payments.export.pdf');
 
 // Payout routes
 Route::get('/payouts/initiate', [DashboardController::class, 'initiatePayout'])->name('payouts.initiate');
 Route::get('/payouts/history', [DashboardController::class, 'payoutHistory'])->name('payouts.history');
 
 // BillPay routes
-Route::get('/billpay/all', [DashboardController::class, 'allBills'])->name('billpay.all');
-Route::get('/billpay/create', [DashboardController::class, 'createBill'])->name('billpay.create');
+Route::get('/billpay/all', [BillPayController::class, 'index'])->name('billpay.all');
+Route::get('/billpay/create', [BillPayController::class, 'create'])->name('billpay.create');
+Route::post('/billpay/create', [BillPayController::class, 'store'])->name('billpay.store');
+Route::get('/billpay/{billPayNumber}', [BillPayController::class, 'show'])->name('billpay.show');
+Route::patch('/billpay/{billPayNumber}', [BillPayController::class, 'update'])->name('billpay.update');
+
+// Statement routes - redirect to report statement
+Route::get('/statement', [DashboardController::class, 'reportStatement'])->name('statement.index');
+Route::post('/sync/payments', [StatementController::class, 'syncPayments'])->name('sync.payments');
+
+// Report export routes
+Route::get('/report/statement/export', [DashboardController::class, 'exportStatement'])->name('report.statement.export');
 
 // Report routes
-Route::get('/report/overview', [DashboardController::class, 'reportOverview'])->name('report.overview');
 Route::get('/report/balance', [DashboardController::class, 'reportBalance'])->name('report.balance');
 Route::get('/report/statement', [DashboardController::class, 'reportStatement'])->name('report.statement');
 

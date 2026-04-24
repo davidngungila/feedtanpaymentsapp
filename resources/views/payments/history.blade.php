@@ -10,6 +10,9 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">Payment History</h5>
                 <div class="d-flex gap-2">
+                    <button class="btn btn-success btn-sm" onclick="syncPayments()" id="syncBtn">
+                        <i class="bx bx-sync me-1"></i>Sync from API
+                    </button>
                     <button class="btn btn-outline-primary btn-sm" onclick="exportHistory()">
                         <i class="bx bx-download me-1"></i>Export
                     </button>
@@ -29,8 +32,8 @@
                                         <i class="bx bx-trending-up text-primary"></i>
                                     </div>
                                     <div>
-                                        <h6 class="mb-0">Total Sent</h6>
-                                        <h4 class="mb-0 text-primary">$12,458.50</h4>
+                                        <h6 class="mb-0">Total Payments</h6>
+                                        <h4 class="mb-0 text-primary">{{ $totalCount ?? 0 }}</h4>
                                     </div>
                                 </div>
                             </div>
@@ -45,37 +48,43 @@
                                     </div>
                                     <div>
                                         <h6 class="mb-0">Successful</h6>
-                                        <h4 class="mb-0 text-success">142</h4>
+                                        <h4 class="mb-0 text-success">{{ $successCount ?? 0 }}</h4>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="card border-warning">
+                        <div class="card border-success">
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
-                                    <div class="avatar avatar-lg bg-warning bg-opacity-10 rounded-circle me-3">
-                                        <i class="bx bx-time-five text-warning"></i>
+                                    <div class="avatar avatar-lg bg-success bg-opacity-10 rounded-circle me-3">
+                                        <i class="bx bx-check-double text-success"></i>
                                     </div>
                                     <div>
-                                        <h6 class="mb-0">Pending</h6>
-                                        <h4 class="mb-0 text-warning">8</h4>
+                                        <h6 class="mb-0">Settled</h6>
+                                        <h4 class="mb-0 text-success">{{ $settledCount ?? 0 }}</h4>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="card border-danger">
+                        <div class="card border-info">
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
-                                    <div class="avatar avatar-lg bg-danger bg-opacity-10 rounded-circle me-3">
-                                        <i class="bx bx-x-circle text-danger"></i>
+                                    <div class="avatar avatar-lg bg-info bg-opacity-10 rounded-circle me-3">
+                                        <i class="bx bx-wallet text-info"></i>
                                     </div>
                                     <div>
-                                        <h6 class="mb-0">Failed</h6>
-                                        <h4 class="mb-0 text-danger">3</h4>
+                                        <h6 class="mb-0">Current Balance</h6>
+                                        <h4 class="mb-0 text-info">
+                                            @if(!empty($balance))
+                                                {{ number_format($balance[0]['balance'] ?? 0, 2) }} {{ $balance[0]['currency'] ?? 'TZS' }}
+                                            @else
+                                                0.00 TZS
+                                            @endif
+                                        </h4>
                                     </div>
                                 </div>
                             </div>
@@ -85,226 +94,132 @@
 
                 <!-- Search and Date Range -->
                 <div class="row mb-4">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="bx bx-search"></i>
-                            </span>
-                            <input type="text" class="form-control" placeholder="Search payments..." id="searchInput">
+                            <span class="input-group-text"><i class="bx bx-search"></i></span>
+                            <input type="text" class="form-control" id="searchInput" placeholder="Search by reference, name, or phone..." value="{{ request('search') }}">
                         </div>
                     </div>
-                    <div class="col-md-8">
+                    <div class="col-md-2">
+                        <input type="date" class="form-control" id="dateFrom" value="{{ request('date_from') }}">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="date" class="form-control" id="dateTo" value="{{ request('date_to') }}">
+                    </div>
+                    <div class="col-md-5">
                         <div class="d-flex gap-2">
-                            <select class="form-select" id="statusFilter">
-                                <option value="">All Status</option>
-                                <option value="successful">Successful</option>
-                                <option value="pending">Pending</option>
-                                <option value="failed">Failed</option>
-                            </select>
-                            <input type="date" class="form-control" id="dateFrom" placeholder="From">
-                            <input type="date" class="form-control" id="dateTo" placeholder="To">
+                            <button type="button" class="btn btn-primary" onclick="filterPayments()">
+                                <i class="bx bx-filter me-1"></i>Filter
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="clearFilters()">
+                                <i class="bx bx-x me-1"></i>Clear
+                            </button>
+                            <button type="button" class="btn btn-success" id="syncBtn" onclick="syncFromAPI()">
+                                <i class="bx bx-sync me-1"></i>Sync from API
+                            </button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Payments Table -->
-                <div class="table-responsive">
-                    <table class="table table-hover" id="paymentsTable">
-                        <thead>
-                            <tr>
-                                <th>Transaction ID</th>
-                                <th>Recipient</th>
-                                <th>Amount</th>
-                                <th>Method</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>
-                                    <span class="text-muted">#PAY001</span>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar me-2">
-                                            <img src="{{ asset('assets/img/avatars/2.png') }}" alt="Avatar" class="rounded-circle">
-                                        </div>
-                                        <div>
-                                            <h6 class="mb-0">Jane Smith</h6>
-                                            <small class="text-muted">jane.smith@email.com</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td><strong>$250.00</strong></td>
-                                <td>
-                                    <span class="badge bg-label-primary">Wallet</span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-success">Successful</span>
-                                </td>
-                                <td><span class="transaction-date" data-date="2024-12-15 10:30">Dec 15, 2024 10:30 AM</span></td>
-                                <td>
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                            <i class="bx bx-dots-horizontal-rounded"></i>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="#" onclick="viewDetails('TRX001')">
-                                                <i class="bx bx-eye me-2"></i>View Details
-                                            </a></li>
-                                            <li><a class="dropdown-item" href="#" onclick="downloadReceipt('TRX001')">
-                                                <i class="bx bx-download me-2"></i>Download Receipt
-                                            </a></li>
-                                            <li><a class="dropdown-item text-danger" href="#" onclick="disputePayment('PAY001')">
-                                                <i class="bx bx-error me-2"></i>Report Issue
-                                            </a></li>
-                                        </ul>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <span class="text-muted">#PAY002</span>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar me-2">
-                                            <img src="{{ asset('assets/img/avatars/3.png') }}" alt="Avatar" class="rounded-circle">
-                                        </div>
-                                        <div>
-                                            <h6 class="mb-0">Mike Johnson</h6>
-                                            <small class="text-muted">+1 234 567 8900</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td><strong>$1,250.00</strong></td>
-                                <td>
-                                    <span class="badge bg-label-info">Card</span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-warning">Pending</span>
-                                </td>
-                                <td>Dec 15, 2024 09:15 AM</td>
-                                <td>
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                            <i class="bx bx-dots-horizontal-rounded"></i>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="#" onclick="viewDetails('TRX002')">
-                                                <i class="bx bx-eye me-2"></i>View Details
-                                            </a></li>
-                                            <li><a class="dropdown-item" href="#" onclick="downloadReceipt('TRX002')">
-                                                <i class="bx bx-download me-2"></i>Download Receipt
-                                            </a></li>
-                                        </ul>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <span class="text-muted">#PAY003</span>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar me-2">
-                                            <img src="{{ asset('assets/img/avatars/4.png') }}" alt="Avatar" class="rounded-circle">
-                                        </div>
-                                        <div>
-                                            <h6 class="mb-0">Sarah Williams</h6>
-                                            <small class="text-muted">sarah.w@email.com</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td><strong>$450.75</strong></td>
-                                <td>
-                                    <span class="badge bg-label-secondary">Bank</span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-success">Successful</span>
-                                </td>
-                                <td>Dec 14, 2024 03:45 PM</td>
-                                <td>
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                            <i class="bx bx-dots-horizontal-rounded"></i>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="#" onclick="viewDetails('TRX003')">
-                                                <i class="bx bx-eye me-2"></i>View Details
-                                            </a></li>
-                                            <li><a class="dropdown-item" href="#" onclick="downloadReceipt('TRX003')">
-                                                <i class="bx bx-download me-2"></i>Download Receipt
-                                            </a></li>
-                                            <li><a class="dropdown-item" href="#" onclick="sendAgain('PAY003')">
-                                                <i class="bx bx-redo me-2"></i>Send Again
-                                            </a></li>
-                                        </ul>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <span class="text-muted">#PAY004</span>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar me-2">
-                                            <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle">
-                                        </div>
-                                        <div>
-                                            <h6 class="mb-0">David Brown</h6>
-                                            <small class="text-muted">david.b@email.com</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td><strong>$875.00</strong></td>
-                                <td>
-                                    <span class="badge bg-label-primary">Wallet</span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-danger">Failed</span>
-                                </td>
-                                <td>Dec 14, 2024 11:20 AM</td>
-                                <td>
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                            <i class="bx bx-dots-horizontal-rounded"></i>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="#" onclick="viewDetails('TRX004')">
-                                                <i class="bx bx-eye me-2"></i>View Details
-                                            </a></li>
-                                            <li><a class="dropdown-item" href="#" onclick="downloadReceipt('TRX004')">
-                                                <i class="bx bx-download me-2"></i>Download Receipt
-                                            </a></li>
-                                            <li><a class="dropdown-item" href="#" onclick="disputePayment('PAY004')">
-                                                <i class="bx bx-error me-2"></i>Report Issue
-                                            </a></li>
-                                        </ul>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                @if(isset($error))
+                    <div class="alert alert-danger">
+                        {{ $error }}
+                    </div>
+                @else
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="paymentsTable">
+                            <thead>
+                                <tr>
+                                    <th>Order Reference</th>
+                                    <th>Payer</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($payments as $payment)
+                                    <tr>
+                                        <td>
+                                            <span class="text-muted">{{ $payment->order_reference ?? 'N/A' }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar me-2">
+                                                    <div class="avatar-initial rounded-circle bg-primary text-white">
+                                                        {{ substr($payment->payer_name ?? 'Unknown', 0, 1) }}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">{{ $payment->payer_name ?? 'Unknown' }}</h6>
+                                                    <small class="text-muted">{{ $payment->phone ?? 'N/A' }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><strong>{{ number_format($payment->amount ?? 0, 2) }} {{ $payment->currency ?? 'TZS' }}</strong></td>
+                                        <td>
+                                            <span class="badge bg-label-primary">{{ $payment->payment_method ?? 'Unknown' }}</span>
+                                        </td>
+                                        <td>
+                                            @php
+                                                $status = $payment->status ?? 'UNKNOWN';
+                                                $statusColor = match($status) {
+                                                    'SUCCESS', 'SETTLED' => 'success',
+                                                    'PENDING', 'PROCESSING' => 'warning',
+                                                    'FAILED' => 'danger',
+                                                    default => 'secondary'
+                                                };
+                                            @endphp
+                                            <span class="badge bg-{{ $statusColor }}">{{ $status }}</span>
+                                        </td>
+                                        <td>{{ $payment->created_at ? \Carbon\Carbon::parse($payment->created_at)->format('M j, Y H:i:s') : 'N/A' }}</td>
+                                        <td>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                    <i class="bx bx-dots-horizontal-rounded"></i>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li>
+                                                        <a class="dropdown-item" href="{{ route('payments.status') }}?reference={{ $payment->order_reference }}">
+                                                            <i class="bx bx-eye me-2"></i>View Status
+                                                        </a>
+                                                    </li>
+                                                    @if(in_array($status, ['SUCCESS', 'SETTLED']))
+                                                        <li>
+                                                            <a class="dropdown-item" href="{{ route('payments.export.pdf') }}?order_reference={{ $payment->order_reference }}" target="_blank">
+                                                                <i class="bx bx-download me-2"></i>Download PDF Receipt
+                                                            </a>
+                                                        </li>
+                                                    @endif
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="text-center">
+                                            <p class="text-muted mb-0">No payments found</p>
+                                            <a href="{{ route('payments.initiate') }}" class="btn btn-primary btn-sm mt-2">Initiate Payment</a>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
 
-                <!-- Pagination -->
-                <nav aria-label="Page navigation">
-                    <ul class="pagination justify-content-center">
-                        <li class="page-item disabled">
-                            <a class="page-link" href="#" tabindex="-1">Previous</a>
-                        </li>
-                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                        <li class="page-item">
-                            <a class="page-link" href="#">Next</a>
-                        </li>
-                    </ul>
-                </nav>
+                <!-- Transaction Count -->
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <div class="text-muted">
+                        Showing all {{ $payments->count() }} settled transactions
+                    </div>
+                    <div class="text-muted">
+                        <i class="bx bx-check-circle"></i> Only settled payments shown
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -591,6 +506,114 @@ document.addEventListener('DOMContentLoaded', function() {
     dateFrom.addEventListener('change', filterTable);
     dateTo.addEventListener('change', filterTable);
 });
+
+function syncPayments() {
+    const syncBtn = document.getElementById('syncBtn');
+    const originalContent = syncBtn.innerHTML;
+    
+    // Show loading state
+    syncBtn.disabled = true;
+    syncBtn.innerHTML = '<i class="bx bx-sync bx-spin me-1"></i>Syncing...';
+    
+    // Make AJAX request to sync payments
+    fetch('/sync/payments', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showToast('success', data.message || 'Payments synced successfully!');
+            
+            // Reload page after a short delay
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            showToast('error', data.message || 'Failed to sync payments');
+        }
+    })
+    .catch(error => {
+        console.error('Sync error:', error);
+        showToast('error', 'An error occurred while syncing payments');
+    })
+    .finally(() => {
+        // Restore button state
+        syncBtn.disabled = false;
+        syncBtn.innerHTML = originalContent;
+    });
+}
+
+function changePerPage(perPage) {
+    const url = new URL(window.location);
+    url.searchParams.set('per_page', perPage);
+    window.location.href = url.toString();
+}
+
+function syncFromAPI() {
+    const syncBtn = document.getElementById('syncBtn');
+    const originalContent = syncBtn.innerHTML;
+    
+    // Show loading state
+    syncBtn.innerHTML = '<i class="bx bx-sync bx-spin me-1"></i>Syncing...';
+    syncBtn.disabled = true;
+    
+    // Make AJAX request to sync from API
+    fetch('/payments/sync-api', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('success', `Successfully synced ${data.synced} transactions from API`);
+            // Reload page to show updated data
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showToast('error', data.message || 'Sync failed');
+        }
+    })
+    .catch(error => {
+        showToast('error', 'Sync failed: ' + error.message);
+    })
+    .finally(() => {
+        // Restore button state
+        syncBtn.innerHTML = originalContent;
+        syncBtn.disabled = false;
+    });
+}
+
+function showToast(type, message) {
+    const toast = document.createElement('div');
+    toast.className = `position-fixed top-0 end-0 p-3`;
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="toast show" role="alert">
+            <div class="toast-header">
+                <strong class="me-auto">${type === 'success' ? 'Success!' : 'Error!'}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        document.body.removeChild(toast);
+    }, 5000);
+}
 
 // Sample transaction data
 const transactions = [
