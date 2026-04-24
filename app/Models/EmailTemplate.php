@@ -11,17 +11,12 @@ class EmailTemplate extends Model
 
     protected $fillable = [
         'name',
-        'type',
         'category',
         'subject',
-        'html_content',
-        'text_content',
+        'content',
         'variables',
         'is_active',
-        'is_default',
-        'usage_count',
-        'last_used_at',
-        'created_by'
+        'user_id'
     ];
 
     protected $casts = [
@@ -31,9 +26,9 @@ class EmailTemplate extends Model
         'last_used_at' => 'datetime'
     ];
 
-    public function creator()
+    public function user()
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function incrementUsage()
@@ -44,24 +39,19 @@ class EmailTemplate extends Model
 
     public function processTemplate(array $data = [])
     {
-        $htmlContent = $this->html_content;
-        $textContent = $this->text_content;
+        $content = $this->content;
         $subject = $this->subject;
 
-        // Replace variables in HTML content
+        // Replace variables in content
         foreach ($data as $key => $value) {
-            $htmlContent = str_replace('{' . $key . '}', $value, $htmlContent);
-            if ($textContent) {
-                $textContent = str_replace('{' . $key . '}', $value, $textContent);
-            }
+            $content = str_replace('{' . $key . '}', $value, $content);
             if ($subject) {
                 $subject = str_replace('{' . $key . '}', $value, $subject);
             }
         }
 
         return [
-            'html' => $htmlContent,
-            'text' => $textContent,
+            'content' => $content,
             'subject' => $subject
         ];
     }
