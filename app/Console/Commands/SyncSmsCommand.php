@@ -62,7 +62,7 @@ class SyncSmsCommand extends Command
             $this->info("   New messages: {$result['synced']}");
             $this->info("   Updated messages: {$result['updated']}");
             
-            if (isset($result['errors']) && $result['errors'] > 0) {
+            if (isset($result['errors']) && is_numeric($result['errors']) && $result['errors'] > 0) {
                 $this->warn("Errors encountered: {$result['errors']}");
             }
             

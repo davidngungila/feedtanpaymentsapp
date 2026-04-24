@@ -12,10 +12,13 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Sync SMS messages every 5 minutes
-        $schedule->command('sms:sync')->everyFiveMinutes()->withoutOverlapping();
+        // Real-time SMS sync - every minute for immediate detection
+        $schedule->command('sms:sync')->everyMinute()->withoutOverlapping();
         
-        // Sync SMS messages every hour (backup)
+        // Heavy sync every 5 minutes (more messages)
+        $schedule->command('sms:sync --limit=100')->everyFiveMinutes()->withoutOverlapping();
+        
+        // Full sync every hour (backup)
         $schedule->command('sms:sync --limit=1000')->hourly()->withoutOverlapping();
         
         // $schedule->command('inspire')->hourly();
