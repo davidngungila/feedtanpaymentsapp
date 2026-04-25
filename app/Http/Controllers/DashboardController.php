@@ -275,16 +275,16 @@ class DashboardController extends Controller
                 $allMonths[] = $monthDate->format('Y-m');
             }
 
-            // Get monthly breakdown from database - only settled transactions (SUCCESS and SETTLED)
+            // Get monthly breakdown from database - calculate all amounts and filter in CASE statements
             $dbMonthlyStatements = Transaction::select(
                 DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
                 DB::raw('COUNT(*) as transaction_count'),
                 DB::raw('SUM(amount) as total_amount'),
                 DB::raw('SUM(CASE WHEN status = "SUCCESS" THEN amount ELSE 0 END) as success_amount'),
                 DB::raw('SUM(CASE WHEN status = "SETTLED" THEN amount ELSE 0 END) as settled_amount'),
-                DB::raw('SUM(CASE WHEN status = "SUCCESS" OR status = "SETTLED" THEN amount ELSE 0 END) as total_settled_amount')
+                DB::raw('SUM(CASE WHEN status = "SUCCESS" OR status = "SETTLED" THEN amount ELSE 0 END) as total_settled_amount'),
+                DB::raw('COUNT(CASE WHEN status = "SUCCESS" OR status = "SETTLED" THEN 1 ELSE NULL END) as settled_count')
             )
-            ->whereIn('status', ['SUCCESS', 'SETTLED'])
             ->whereIn(DB::raw('DATE_FORMAT(created_at, "%Y-%m")'), $allMonths)
             ->groupBy('month')
             ->orderBy('month', 'desc')
@@ -301,24 +301,26 @@ class DashboardController extends Controller
                 $successAmount = 0;
                 $settledAmount = 0;
                 $totalSettledAmount = 0;
+                $settledCount = 0;
                 
                 if ($data) {
-                    $transactionCount = $data->transaction_count ?? 0;
+                    $transactionCount = $data->settled_count ?? 0;
                     $totalAmount = $data->total_amount ?? 0;
                     $successAmount = $data->success_amount ?? 0;
                     $settledAmount = $data->settled_amount ?? 0;
                     $totalSettledAmount = $data->total_settled_amount ?? 0;
+                    $settledCount = $data->settled_count ?? 0;
                 }
                 
                 return [
                     'month' => $month,
                     'month_name' => \Carbon\Carbon::createFromFormat('Y-m', $month)->format('F Y'),
-                    'transaction_count' => $transactionCount,
-                    'total_amount' => $totalAmount,
+                    'transaction_count' => $settledCount,
+                    'total_amount' => $totalSettledAmount,
                     'success_amount' => $successAmount,
                     'settled_amount' => $settledAmount,
                     'total_settled_amount' => $totalSettledAmount,
-                    'has_data' => $transactionCount > 0
+                    'has_data' => $totalSettledAmount > 0
                 ];
             });
             
