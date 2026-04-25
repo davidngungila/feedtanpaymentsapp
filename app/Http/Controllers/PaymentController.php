@@ -105,16 +105,9 @@ class PaymentController extends Controller
                 ]);
             }
 
-            // Send SMS notification
-            try {
-                $this->sendPaymentInitiationNotification($formattedPhone, $orderReference, $request->amount, $request->payer_name);
-            } catch (\Exception $e) {
-                Log::warning('SMS notification failed', ['error' => $e->getMessage()]);
-            }
-
             // Return appropriate response based on whether we used fallback mode
             if ($isFallbackMode) {
-                Log::warning('Payment initiated in fallback mode', [
+                Log::warning('Payment initiated in fallback mode - SMS not sent', [
                     'order_reference' => $orderReference,
                     'phone' => $formattedPhone,
                     'amount' => $request->amount
@@ -127,6 +120,18 @@ class PaymentController extends Controller
                     'fallback_mode' => true,
                     'warning' => 'API temporarily unavailable - payment queued for processing'
                 ]);
+            }
+
+            // Send SMS notification only for real successful payments
+            try {
+                $this->sendPaymentInitiationNotification($formattedPhone, $orderReference, $request->amount, $request->payer_name);
+                Log::info('SMS notification sent for successful payment', [
+                    'order_reference' => $orderReference,
+                    'phone' => $formattedPhone,
+                    'amount' => $request->amount
+                ]);
+            } catch (\Exception $e) {
+                Log::warning('SMS notification failed', ['error' => $e->getMessage()]);
             }
 
             return response()->json([
