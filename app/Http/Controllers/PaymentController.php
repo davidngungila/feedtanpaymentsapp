@@ -210,11 +210,20 @@ class PaymentController extends Controller
     public function history(Request $request)
     {
         try {
-            // Sync latest data from API first
-            $this->syncLatestDataFromAPI();
+            // Try to sync latest data from API, but don't fail if it doesn't work
+            try {
+                $this->syncLatestDataFromAPI();
+            } catch (\Exception $syncError) {
+                Log::warning('API sync failed, continuing with existing data', ['error' => $syncError->getMessage()]);
+            }
             
             // Get current account balance
-            $balance = $this->clickPesa->getAccountBalance();
+            try {
+                $balance = $this->clickPesa->getAccountBalance();
+            } catch (\Exception $balanceError) {
+                Log::warning('Balance fetch failed, using empty balance', ['error' => $balanceError->getMessage()]);
+                $balance = [];
+            }
             
             // Handle the correct balance structure: {"balances":[{"currency":"TZS","balance":118232}]}
             if (isset($balance['balances']) && is_array($balance['balances'])) {
