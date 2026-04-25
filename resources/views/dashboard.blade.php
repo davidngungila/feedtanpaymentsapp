@@ -107,7 +107,7 @@
                                     <i class="icon-base bx bx-dots-vertical-rounded text-body-secondary"></i>
                                 </button>
                                 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="cardOpt3">
-                                    <a class="dropdown-item" href="{{ route('report.overview') }}">View Report</a>
+                                    <a class="dropdown-item" href="{{ route('report.statement') }}">View Statement</a>
                                     <a class="dropdown-item" href="javascript:void(0);">Export Data</a>
                                 </div>
                             </div>
@@ -231,7 +231,7 @@
                                 <i class="icon-base bx bx-dots-vertical-rounded icon-lg text-body-secondary"></i>
                             </button>
                             <div class="dropdown-menu dropdown-menu-end" aria-labelledby="totalRevenue">
-                                <a class="dropdown-item" href="{{ route('report.overview') }}">View Report</a>
+                                <a class="dropdown-item" href="{{ route('report.statement') }}">View Statement</a>
                                 <a class="dropdown-item" href="javascript:void(0);">Refresh Data</a>
                                 <a class="dropdown-item" href="javascript:void(0);">Export Chart</a>
                                 <a class="dropdown-item" href="javascript:void(0);">Share Report</a>
