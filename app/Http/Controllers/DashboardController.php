@@ -388,8 +388,9 @@ class DashboardController extends Controller
             // Debug: Log the parameters
             \Log::info("Export Statement - Month: {$month}, Currency: {$currency}, Format: {$format}");
             
-            // Get transactions for the selected month (remove currency filter for debugging)
+            // Get settled transactions for the selected month (SUCCESS and SETTLED only)
             $transactions = Transaction::where(DB::raw('DATE_FORMAT(created_at, "%Y-%m")'), $month)
+                ->whereIn('status', ['SUCCESS', 'SETTLED'])
                 ->orderBy('created_at', 'desc')
                 ->get();
                 
