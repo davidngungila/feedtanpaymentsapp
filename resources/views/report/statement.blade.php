@@ -168,64 +168,7 @@
                     </div>
                 @endif
 
-                <!-- Selected Month Transactions -->
-                @if($selectedMonthTransactions->count() > 0)
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="card-title mb-0">
-                                All Transactions for {{ \Carbon\Carbon::parse($selectedMonth . '-01')->format('F Y') }}
-                                <small class="text-muted">({{ $selectedMonthTransactions->count() }} transactions)</small>
-                            </h5>
-                            <div>
-                                <button class="btn btn-sm btn-outline-success" onclick="exportMonthData('{{ $selectedMonth }}', 'pdf')">
-                                    <i class="bx bx-file"></i> PDF
-                                </button>
-                                <button class="btn btn-sm btn-outline-primary" onclick="exportMonthData('{{ $selectedMonth }}', 'excel')">
-                                    <i class="bx bx-spreadsheet"></i> Excel
-                                </button>
                             </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Order Ref</th>
-                                            <th>Payer</th>
-                                            <th>Phone</th>
-                                            <th>Amount</th>
-                                            <th>Status</th>
-                                            <th>Method</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse($selectedMonthTransactions as $transaction)
-                                            <tr>
-                                                <td>{{ $transaction->created_at->format('M j, Y H:i') }}</td>
-                                                <td><code>{{ $transaction->order_reference }}</code></td>
-                                                <td>{{ $transaction->payer_name ?? 'Unknown' }}</td>
-                                                <td>{{ $transaction->phone ?? 'N/A' }}</td>
-                                                <td><strong>{{ number_format($transaction->amount, 2) }} {{ $transaction->currency }}</strong></td>
-                                                <td>
-                                                    <span class="badge bg-{{ $transaction->status === 'SUCCESS' || $transaction->status === 'SETTLED' ? 'success' : ($transaction->status === 'PROCESSING' || $transaction->status === 'PENDING' ? 'warning' : 'danger') }}">
-                                                        {{ $transaction->status }}
-                                                    </span>
-                                                </td>
-                                                <td>{{ $transaction->payment_method ?? 'N/A' }}</td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="7" class="text-center">No transactions found</td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-            </div>
         </div>
     </div>
 </div>
