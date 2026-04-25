@@ -59,6 +59,66 @@
                     </div>
                 </div>
 
+                <!-- Account Summary -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Account Statement</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="me-3">
+                                        <h6 class="mb-0">Current Balance</h6>
+                                        <h4 class="mb-0 text-primary">{{ number_format($accountSummary['current_balance'], 2) }} {{ $currency }}</h4>
+                                        <small class="text-muted">Last Updated: {{ $accountSummary['last_updated'] ? \Carbon\Carbon::parse($accountSummary['last_updated'])->format('M j, Y H:i') : 'N/A' }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Start Date</label>
+                                    <input type="date" class="form-control" value="{{ $accountSummary['start_date'] }}" id="startDate">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">End Date</label>
+                                    <input type="date" class="form-control" value="{{ $accountSummary['end_date'] }}" id="endDate">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Currency</label>
+                                    <select class="form-select" id="currency">
+                                        <option value="TZS" {{ $currency == 'TZS' ? 'selected' : '' }}>TZS</option>
+                                        <option value="USD" {{ $currency == 'USD' ? 'selected' : '' }}>USD</option>
+                                        <option value="EUR" {{ $currency == 'EUR' ? 'selected' : '' }}>EUR</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Account Summary Details -->
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">Account Summary</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p class="mb-2"><strong>Currency:</strong> {{ $currency }}</p>
+                                        <p class="mb-2"><strong>Opening Balance:</strong> {{ number_format($accountSummary['opening_balance'], 2) }} {{ $currency }}</p>
+                                        <p class="mb-2"><strong>Closing Balance:</strong> {{ number_format($accountSummary['closing_balance'], 2) }} {{ $currency }}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p class="mb-2"><strong>Total Credits:</strong> {{ number_format($accountSummary['total_credits'], 2) }} {{ $currency }}</p>
+                                        <p class="mb-2"><strong>Total Debits:</strong> {{ number_format($accountSummary['total_debits'], 2) }} {{ $currency }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Monthly Statements -->
                 <div class="table-responsive mb-4">
                     <table class="table table-hover" id="monthlyStatementsTable">

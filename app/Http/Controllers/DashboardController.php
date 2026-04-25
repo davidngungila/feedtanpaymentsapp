@@ -358,12 +358,40 @@ class DashboardController extends Controller
                 'failed_amount' => 0
             ]);
 
+            // Calculate account summary
+            $currentBalance = $selectedMonthTransactions->sum('amount');
+            $lastUpdated = $selectedMonthTransactions->max('created_at');
+            
+            // Calculate opening balance (sum of all settled transactions before selected month)
+            $openingBalance = Transaction::where('created_at', '<', $selectedMonth . '-01')
+                ->whereIn('status', ['SUCCESS', 'SETTLED'])
+                ->sum('amount');
+            
+            // Calculate closing balance (opening balance + current month settled amount)
+            $closingBalance = $openingBalance + $currentBalance;
+            
+            // For credits and debits, we'll treat all settled transactions as credits (money in)
+            $totalCredits = $currentBalance;
+            $totalDebits = 0; // Assuming no debits in current system structure
+            
+            $accountSummary = [
+                'current_balance' => $currentBalance,
+                'last_updated' => $lastUpdated,
+                'opening_balance' => $openingBalance,
+                'closing_balance' => $closingBalance,
+                'total_credits' => $totalCredits,
+                'total_debits' => $totalDebits,
+                'start_date' => $selectedMonth . '-01',
+                'end_date' => \Carbon\Carbon::parse($selectedMonth . '-01')->endOfMonth()->format('Y-m-d')
+            ];
+
             return view('report.statement', compact(
                 'monthlyStatements', 
                 'selectedMonthTransactions', 
                 'selectedMonth', 
                 'currency',
-                'monthlyTotals'
+                'monthlyTotals',
+                'accountSummary'
             ));
 
         } catch (\Exception $e) {
@@ -373,7 +401,17 @@ class DashboardController extends Controller
                 'selectedMonthTransactions' => collect([]),
                 'selectedMonth' => $selectedMonth ?? now()->format('Y-m'),
                 'currency' => $currency ?? 'TZS',
-                'monthlyTotals' => []
+                'monthlyTotals' => [],
+                'accountSummary' => [
+                    'current_balance' => 0,
+                    'last_updated' => now(),
+                    'opening_balance' => 0,
+                    'closing_balance' => 0,
+                    'total_credits' => 0,
+                    'total_debits' => 0,
+                    'start_date' => now()->format('Y-m-01'),
+                    'end_date' => now()->endOfMonth()->format('Y-m-d')
+                ]
             ]);
         }
     }
