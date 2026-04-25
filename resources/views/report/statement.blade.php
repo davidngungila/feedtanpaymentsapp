@@ -463,12 +463,12 @@ function viewMonthDetails(month) {
         // Populate reconciliation summary
         document.getElementById('totalCount').textContent = monthInfo.transaction_count || 0;
         document.getElementById('totalAmount').textContent = `${number_format(monthInfo.total_amount || 0, 2)} TZS`;
-        document.getElementById('successCount').textContent = monthInfo.success_count || 0;
-        document.getElementById('successAmount').textContent = `${number_format(monthInfo.success_amount || 0, 2)} TZS`;
-        document.getElementById('pendingCount').textContent = monthInfo.pending_count || 0;
-        document.getElementById('pendingAmount').textContent = `${number_format(monthInfo.pending_amount || 0, 2)} TZS`;
-        document.getElementById('failedCount').textContent = monthInfo.failed_count || 0;
-        document.getElementById('failedAmount').textContent = `${number_format(monthInfo.failed_amount || 0, 2)} TZS`;
+        document.getElementById('successCount').textContent = monthInfo.transaction_count || 0;
+        document.getElementById('successAmount').textContent = `${number_format(monthInfo.total_settled_amount || 0, 2)} TZS`;
+        document.getElementById('pendingCount').textContent = 0;
+        document.getElementById('pendingAmount').textContent = '0.00 TZS';
+        document.getElementById('failedCount').textContent = 0;
+        document.getElementById('failedAmount').textContent = '0.00 TZS';
     }
     
     modal.show();
