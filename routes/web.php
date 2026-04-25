@@ -34,6 +34,12 @@ Route::get('/payments/history', [PaymentController::class, 'history'])->name('pa
 Route::post('/payments/sync-api', [PaymentController::class, 'syncFromAPI'])->name('payments.sync.api');
 Route::get('/payments/export/pdf', [PaymentController::class, 'exportPdf'])->name('payments.export.pdf');
 
+// API Capture routes
+Route::get('/api-capture/auto', [ApiCaptureController::class, 'autoCapture'])->name('api.capture.auto');
+Route::get('/api-capture/manual', [ApiCaptureController::class, 'manualCapture'])->name('api.capture.manual');
+Route::get('/api-capture/status', [ApiCaptureController::class, 'captureStatus'])->name('api.capture.status');
+Route::get('/admin/api-capture', [ApiCaptureController::class, 'dashboard'])->name('admin.api.capture');
+
 // Payout routes
 Route::get('/payouts/initiate', [DashboardController::class, 'initiatePayout'])->name('payouts.initiate');
 Route::get('/payouts/history', [DashboardController::class, 'payoutHistory'])->name('payouts.history');

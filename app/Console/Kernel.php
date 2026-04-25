@@ -12,6 +12,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        // Automatic API capture - every 2 minutes for real-time transaction detection
+        $schedule->command('api:capture-auto')->everyTwoMinutes()->withoutOverlapping();
+        
         // Real-time SMS sync - every minute for immediate detection
         $schedule->command('sms:sync')->everyMinute()->withoutOverlapping();
         
@@ -42,6 +45,9 @@ class Kernel extends ConsoleKernel
         
         // Register the sync payments command
         $this->registerCommand(\App\Console\Commands\SyncPaymentsCommand::class);
+        
+        // Register the auto API capture command
+        $this->registerCommand(\App\Console\Commands\AutoApiCapture::class);
 
         require base_path('routes/console.php');
     }
