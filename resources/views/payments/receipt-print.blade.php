@@ -104,92 +104,21 @@
   
   <div class="title">PAYMENT RECEIPT</div>
   
-  <div style="display: flex; justify-content: space-around; align-items: center; margin: 15px 0;">
-    <div class="success-icon">
-      <svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="darkgreen" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10" stroke="darkgreen" stroke-width="1.5" fill="none"></circle>
-        <path d="M7 12l3 3 6-6" stroke="darkgreen" stroke-width="1.5"></path>
-      </svg>
-    </div>
-    
-    <div class="qr-code">
-      <div style="text-align: center;">
-        <div style="font-size: 12px; color: darkgreen; margin-bottom: 5px; font-weight: bold;">Scan to Verify</div>
-        <div style="border: 2px solid darkgreen; padding: 5px; background: white;">
-          <svg width="80" height="80" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-            <!-- QR Code Pattern for verification -->
-            <rect x="10" y="10" width="30" height="30" fill="black"/>
-            <rect x="20" y="20" width="10" height="10" fill="white"/>
-            <rect x="160" y="10" width="30" height="30" fill="black"/>
-            <rect x="170" y="20" width="10" height="10" fill="white"/>
-            <rect x="10" y="160" width="30" height="30" fill="black"/>
-            <rect x="20" y="170" width="10" height="10" fill="white"/>
-            <!-- Data pattern -->
-            <rect x="50" y="20" width="10" height="10" fill="black"/>
-            <rect x="70" y="20" width="10" height="10" fill="black"/>
-            <rect x="90" y="20" width="10" height="10" fill="black"/>
-            <rect x="50" y="40" width="10" height="10" fill="black"/>
-            <rect x="70" y="40" width="10" height="10" fill="black"/>
-            <rect x="90" y="40" width="10" height="10" fill="black"/>
-            <rect x="50" y="60" width="10" height="10" fill="black"/>
-            <rect x="70" y="60" width="10" height="10" fill="black"/>
-            <rect x="90" y="60" width="10" height="10" fill="black"/>
-            <rect x="50" y="80" width="10" height="10" fill="black"/>
-            <rect x="70" y="80" width="10" height="10" fill="black"/>
-            <rect x="90" y="80" width="10" height="10" fill="black"/>
-            <rect x="110" y="20" width="10" height="10" fill="black"/>
-            <rect x="130" y="20" width="10" height="10" fill="black"/>
-            <rect x="150" y="20" width="10" height="10" fill="black"/>
-            <rect x="110" y="40" width="10" height="10" fill="black"/>
-            <rect x="130" y="40" width="10" height="10" fill="black"/>
-            <rect x="150" y="40" width="10" height="10" fill="black"/>
-            <rect x="110" y="60" width="10" height="10" fill="black"/>
-            <rect x="130" y="60" width="10" height="10" fill="black"/>
-            <rect x="150" y="60" width="10" height="10" fill="black"/>
-            <rect x="110" y="80" width="10" height="10" fill="black"/>
-            <rect x="130" y="80" width="10" height="10" fill="black"/>
-            <rect x="150" y="80" width="10" height="10" fill="black"/>
-            <rect x="50" y="110" width="10" height="10" fill="black"/>
-            <rect x="70" y="110" width="10" height="10" fill="black"/>
-            <rect x="90" y="110" width="10" height="10" fill="black"/>
-            <rect x="110" y="110" width="10" height="10" fill="black"/>
-            <rect x="130" y="110" width="10" height="10" fill="black"/>
-            <rect x="150" y="110" width="10" height="10" fill="black"/>
-            <rect x="50" y="130" width="10" height="10" fill="black"/>
-            <rect x="70" y="130" width="10" height="10" fill="black"/>
-            <rect x="90" y="130" width="10" height="10" fill="black"/>
-            <rect x="110" y="130" width="10" height="10" fill="black"/>
-            <rect x="130" y="130" width="10" height="10" fill="black"/>
-            <rect x="150" y="130" width="10" height="10" fill="black"/>
-            <rect x="50" y="150" width="10" height="10" fill="black"/>
-            <rect x="70" y="150" width="10" height="10" fill="black"/>
-            <rect x="90" y="150" width="10" height="10" fill="black"/>
-            <rect x="110" y="150" width="10" height="10" fill="black"/>
-            <rect x="130" y="150" width="10" height="10" fill="black"/>
-            <rect x="150" y="150" width="10" height="10" fill="black"/>
-            <text x="100" y="195" text-anchor="middle" font-size="8" fill="black">{{ $transaction->order_reference }}</text>
-          </svg>
-        </div>
-        <div style="font-size: 10px; color: #666; margin-top: 5px;">Ref: {{ $transaction->order_reference }}</div>
-      </div>
-    </div>
+  <div class="success-icon">
+    <svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="darkgreen" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10" stroke="darkgreen" stroke-width="1.5" fill="none"></circle>
+      <path d="M7 12l3 3 6-6" stroke="darkgreen" stroke-width="1.5"></path>
+    </svg>
   </div>
   
   <div style="text-align: center; padding-top: 1px; color: darkgreen; font-weight: bold;">
     *************************************************************************************************
   </div>
-  <div style="display: flex; justify-content: space-between; margin: 10px 0;">
-    <div class="row" style="flex: 1; margin-right: 10px;"><span class="label">Receipt ID</span> <span class="value">:{{ $transaction->id ?? 'N/A' }}</span></div>
-    <div class="row" style="flex: 1;"><span class="label">Date</span> <span class="value">:{{ \Carbon\Carbon::parse($transaction->created_at)->format('M d, Y H:i') }}</span></div>
-  </div>
-  
-  <div class="row"><span class="label">Payee</span> <span class="value">:{{ $transaction->payer_name ?? $transaction->phone ?? 'N/A' }}</span></div>
-  
-  <div style="background: #f0f8f0; padding: 8px; border-radius: 5px; margin: 8px 0; border-left: 4px solid darkgreen;">
-    <div class="row" style="margin-bottom: 5px;"><span class="label" style="color: darkgreen; font-weight: bold;">Amount Paid</span> <span class="value" style="color: darkgreen; font-weight: bold; font-size: 16px;">:Tsh {{ number_format($transaction->amount, 2) }}</span></div>
-    <div class="row"><span class="label">In Words</span> <span class="value">:{{ number_format($transaction->amount, 2) }} Tanzania Shillings Only</span></div>
-  </div>
-  
+  <div class="row"><span class="label">Receipt ID</span> <span class="value">:{{ $transaction->id ?? 'N/A' }}</span></div>
+  <div class="row"><span class="label">Date</span> <span class="value">:{{ \Carbon\Carbon::parse($transaction->created_at)->format('M d, Y H:i') }}</span></div>
+  <div class="row"><span class="label">Payee</span> <span class="value">:{{ $transaction->payer_name ?? 'N/A' }}</span></div>
+  <div class="row"><span class="label">Amount Paid</span> <span class="value">:Tsh {{ number_format($transaction->amount, 2) }}</span></div>
+  <div class="row"><span class="label">In Words</span> <span class="value">:{{ number_format($transaction->amount, 2) }} Tanzania Shillings Only</span></div>
   <div class="row"><span class="label">Reference No</span> <span class="value">:{{ $transaction->order_reference ?? 'N/A' }}</span></div>
   <div class="row"><span class="label">Purpose</span> <span class="value">:{{ $transaction->description ?? 'Payment' }}</span></div>
   <div style="margin-top: 15px; text-align: center; font-weight: bold;">
