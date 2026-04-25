@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Transaction;
-use App\Services\ClickPesaService;
+use App\Services\ClickPesaAPIService;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
@@ -11,7 +11,7 @@ class ApiCaptureController extends Controller
 {
     protected $clickPesa;
     
-    public function __construct(ClickPesaService $clickPesa)
+    public function __construct(ClickPesaAPIService $clickPesa)
     {
         $this->clickPesa = $clickPesa;
     }

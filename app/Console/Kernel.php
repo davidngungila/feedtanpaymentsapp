@@ -34,21 +34,6 @@ class Kernel extends ConsoleKernel
     {
         $this->load(__DIR__.'/Commands');
 
-        // Register the SMS sync command
-        $this->registerCommand(\App\Console\Commands\SyncSmsCommand::class);
-        
-        // Register the test payment command
-        $this->registerCommand(\App\Console\Commands\TestPaymentCommand::class);
-        
-        // Register the test payment status command
-        $this->registerCommand(\App\Console\Commands\TestPaymentStatusCommand::class);
-        
-        // Register the sync payments command
-        $this->registerCommand(\App\Console\Commands\SyncPaymentsCommand::class);
-        
-        // Register the auto API capture command
-        $this->registerCommand(\App\Console\Commands\AutoApiCapture::class);
-
         require base_path('routes/console.php');
     }
 }

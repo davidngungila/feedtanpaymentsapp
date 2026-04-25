@@ -30,7 +30,7 @@ class AutoApiCapture extends Command
         $this->info('Starting automatic API capture...');
         
         try {
-            $apiCapture = new ApiCaptureController(app(\App\Services\ClickPesaService::class));
+            $apiCapture = new ApiCaptureController(app(\App\Services\ClickPesaAPIService::class));
             $result = $apiCapture->autoCapture();
             
             $data = json_decode($result->getContent(), true);
