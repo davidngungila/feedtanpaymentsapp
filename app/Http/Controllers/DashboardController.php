@@ -264,9 +264,6 @@ class DashboardController extends Controller
     public function reportStatement(Request $request)
     {
         try {
-            // Sync latest data from API
-            $this->syncLatestDataFromAPI();
-            
             $selectedMonth = $request->get('month', now()->format('Y-m'));
             $currency = $request->get('currency', 'TZS');
 
@@ -292,29 +289,41 @@ class DashboardController extends Controller
             ->orderBy('month', 'desc')
             ->get()
             ->keyBy('month');
-
+            
             // Create complete monthly statements with all months included
             $monthlyStatements = collect($allMonths)->map(function($month) use ($dbMonthlyStatements) {
-                $data = $dbMonthlyStatements->get($month, collect());
+                $data = $dbMonthlyStatements->get($month);
+                
+                // Handle both Collection and null cases properly
+                $transactionCount = 0;
+                $totalAmount = 0;
+                $successAmount = 0;
+                $pendingAmount = 0;
+                $failedAmount = 0;
+                
+                if ($data) {
+                    $transactionCount = $data->transaction_count ?? 0;
+                    $totalAmount = $data->total_amount ?? 0;
+                    $successAmount = $data->success_amount ?? 0;
+                    $pendingAmount = $data->pending_amount ?? 0;
+                    $failedAmount = $data->failed_amount ?? 0;
+                }
                 
                 return [
                     'month' => $month,
                     'month_name' => \Carbon\Carbon::createFromFormat('Y-m', $month)->format('F Y'),
-                    'transaction_count' => $data->get('transaction_count', 0),
-                    'total_amount' => $data->get('total_amount', 0),
-                    'success_amount' => $data->get('success_amount', 0),
-                    'pending_amount' => $data->get('pending_amount', 0),
-                    'failed_amount' => $data->get('failed_amount', 0),
-                    'has_data' => $data->get('transaction_count', 0) > 0
+                    'transaction_count' => $transactionCount,
+                    'total_amount' => $totalAmount,
+                    'success_amount' => $successAmount,
+                    'pending_amount' => $pendingAmount,
+                    'failed_amount' => $failedAmount,
+                    'has_data' => $transactionCount > 0
                 ];
             });
             
             // Get transactions for selected month with full reconciliation
             $selectedMonthTransactions = Transaction::when($selectedMonth, function($query, $selectedMonth) {
                     return $query->where(DB::raw('DATE_FORMAT(created_at, "%Y-%m")'), $selectedMonth);
-                })
-                ->when($currency && $currency !== 'all', function($query, $currency) {
-                    return $query->where('currency', $currency);
                 })
                 ->orderBy('created_at', 'desc')
                 ->get();
