@@ -23,6 +23,14 @@ class PaymentController extends Controller
     /**
      * Show the payment initiation form
      */
+    public function initiate()
+    {
+        return view('payments.create');
+    }
+
+    /**
+     * Show the payment initiation form (alias for initiate)
+     */
     public function create()
     {
         return view('payments.create');
