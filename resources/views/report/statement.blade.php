@@ -329,71 +329,67 @@
     </div>
 </div>
 
-<!-- Detailed Transaction View Modal -->
-<div class="modal fade" id="transactionDetailsModal" tabindex="-1" aria-labelledby="transactionDetailsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="transactionDetailsModalLabel">
-                    <i class="bx bx-receipt me-2"></i>
-                    <span id="modalMonthTitle">Transaction Details</span>
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <div class="card border-success">
-                            <div class="card-body">
-                                <h6 class="card-title text-success">Amount Entered</h6>
-                                <h4 class="mb-0" id="totalEnteredAmount">0.00 TZS</h4>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card border-info">
-                            <div class="card-body">
-                                <h6 class="card-title text-info">Amount Cashed Out</h6>
-                                <h4 class="mb-0" id="totalCashedOutAmount">0.00 TZS</h4>
-                            </div>
-                        </div>
+<!-- Detailed Transaction View Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="transactionDetailsOffcanvas" aria-labelledby="transactionDetailsOffcanvasLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="transactionDetailsOffcanvasLabel">
+            <i class="bx bx-receipt me-2"></i>
+            <span id="offcanvasMonthTitle">Transaction Details</span>
+        </h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <h6 class="card-title text-success">Amount Entered</h6>
+                        <h4 class="mb-0" id="totalEnteredAmount">0.00 TZS</h4>
                     </div>
                 </div>
-                
-                <div class="table-responsive">
-                    <table class="table table-striped" id="transactionDetailsTable">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Order Reference</th>
-                                <th>Payer Name</th>
-                                <th>Phone</th>
-                                <th>Amount Entered</th>
-                                <th>Amount Cashed Out</th>
-                                <th>Status</th>
-                                <th>Payment Method</th>
-                            </tr>
-                        </thead>
-                        <tbody id="transactionDetailsBody">
-                            <tr>
-                                <td colspan="8" class="text-center">
-                                    <div class="spinner-border text-primary" role="status">
-                                        <span class="visually-hidden">Loading...</span>
-                                    </div>
-                                    <p class="mt-2">Loading transaction details...</p>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="downloadTransactionPDF()">
-                    <i class="bx bx-download me-1"></i>Download PDF
-                </button>
+            <div class="col-md-6">
+                <div class="card border-info">
+                    <div class="card-body">
+                        <h6 class="card-title text-info">Amount Cashed Out</h6>
+                        <h4 class="mb-0" id="totalCashedOutAmount">0.00 TZS</h4>
+                    </div>
+                </div>
             </div>
         </div>
+        
+        <div class="table-responsive">
+            <table class="table table-striped" id="transactionDetailsTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Order Reference</th>
+                        <th>Payer Name</th>
+                        <th>Phone</th>
+                        <th>Amount Entered</th>
+                        <th>Amount Cashed Out</th>
+                        <th>Status</th>
+                        <th>Payment Method</th>
+                    </tr>
+                </thead>
+                <tbody id="transactionDetailsBody">
+                    <tr>
+                        <td colspan="8" class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading transaction details...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="offcanvas-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">Close</button>
+        <button type="button" class="btn btn-primary" onclick="downloadTransactionPDF()">
+            <i class="bx bx-download me-1"></i>Download PDF
+        </button>
     </div>
 </div>
 
@@ -404,17 +400,17 @@ let currentMonth = '';
 
 function viewMonthDetails(month) {
     currentMonth = month;
-    const modal = new bootstrap.Modal(document.getElementById('transactionDetailsModal'));
+    const offcanvas = new bootstrap.Offcanvas(document.getElementById('transactionDetailsOffcanvas'));
     const monthData = @json($monthlyStatements);
     const monthInfo = monthData.find(m => m.month === month);
     
     if (monthInfo) {
-        document.getElementById('modalMonthTitle').textContent = `Transaction Details - ${monthInfo.month_name}`;
+        document.getElementById('offcanvasMonthTitle').textContent = `All Transactions for ${monthInfo.month_name} (${monthInfo.transaction_count} transactions)`;
         document.getElementById('totalEnteredAmount').textContent = `${number_format(monthInfo.total_amount, 2)} TZS`;
         document.getElementById('totalCashedOutAmount').textContent = `${number_format(monthInfo.total_settled_amount, 2)} TZS`;
     }
     
-    modal.show();
+    offcanvas.show();
     
     // Load transaction details for the month
     loadTransactionDetails(month);
@@ -508,7 +504,6 @@ function getStatusColor(status) {
 }
 
 function downloadTransactionPDF() {
-    const month = document.getElementById('modalMonthTitle').textContent.split(' - ')[1];
     const url = `/report/statement/export?format=pdf&month=${currentMonth}&currency=TZS`;
     window.open(url, '_blank');
 }
