@@ -272,67 +272,100 @@
     </div>
 </div>
 
-<!-- Detailed Transaction View Offcanvas -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="transactionDetailsOffcanvas" aria-labelledby="transactionDetailsOffcanvasLabel">
-    <div class="offcanvas-header">
-        <h5 class="offcanvas-title" id="transactionDetailsOffcanvasLabel">
-            <i class="bx bx-receipt me-2"></i>
-            <span id="offcanvasMonthTitle">Transaction Details</span>
-        </h5>
-        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-    </div>
-    <div class="offcanvas-body">
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <div class="card border-success">
-                    <div class="card-body">
-                        <h6 class="card-title text-success">Amount Entered</h6>
-                        <h4 class="mb-0" id="totalEnteredAmount">0.00 TZS</h4>
-                    </div>
-                </div>
+<!-- Detailed Transaction View Modal -->
+<div class="modal fade" id="transactionDetailsModal" tabindex="-1" aria-labelledby="transactionDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="transactionDetailsModalLabel">
+                    <i class="bx bx-receipt me-2"></i>
+                    <span id="modalMonthTitle">Transaction Details</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="col-md-6">
-                <div class="card border-info">
-                    <div class="card-body">
-                        <h6 class="card-title text-info">Amount Cashed Out</h6>
-                        <h4 class="mb-0" id="totalCashedOutAmount">0.00 TZS</h4>
+            <div class="modal-body">
+                <!-- Monthly Reconciliation Summary -->
+                <div class="card mb-4" id="monthlyReconciliationCard">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0" id="reconciliationTitle">Monthly Reconciliation</h6>
                     </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="table-responsive">
-            <table class="table table-striped" id="transactionDetailsTable">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Order Reference</th>
-                        <th>Payer Name</th>
-                        <th>Phone</th>
-                        <th>Amount Entered</th>
-                        <th>Amount Cashed Out</th>
-                        <th>Status</th>
-                        <th>Payment Method</th>
-                    </tr>
-                </thead>
-                <tbody id="transactionDetailsBody">
-                    <tr>
-                        <td colspan="8" class="text-center">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="card border-primary">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">Total Transactions</h6>
+                                        <h3 class="text-primary" id="totalCount">0</h3>
+                                        <p class="text-muted mb-0" id="totalAmount">0.00 TZS</p>
+                                    </div>
+                                </div>
                             </div>
-                            <p class="mt-2">Loading transaction details...</p>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                            <div class="col-md-3">
+                                <div class="card border-success">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">Successful</h6>
+                                        <h3 class="text-success" id="successCount">0</h3>
+                                        <p class="text-muted mb-0" id="successAmount">0.00 TZS</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card border-warning">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">Pending</h6>
+                                        <h3 class="text-warning" id="pendingCount">0</h3>
+                                        <p class="text-muted mb-0" id="pendingAmount">0.00 TZS</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card border-danger">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">Failed</h6>
+                                        <h3 class="text-danger" id="failedCount">0</h3>
+                                        <p class="text-muted mb-0" id="failedAmount">0.00 TZS</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transaction Details Table -->
+                <div class="table-responsive">
+                    <table class="table table-striped" id="transactionDetailsTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Order Reference</th>
+                                <th>Payer Name</th>
+                                <th>Phone</th>
+                                <th>Amount Entered</th>
+                                <th>Amount Cashed Out</th>
+                                <th>Status</th>
+                                <th>Payment Method</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionDetailsBody">
+                            <tr>
+                                <td colspan="8" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading transaction details...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="downloadTransactionPDF()">
+                    <i class="bx bx-download me-1"></i>Download PDF
+                </button>
+            </div>
         </div>
-    </div>
-    <div class="offcanvas-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">Close</button>
-        <button type="button" class="btn btn-primary" onclick="downloadTransactionPDF()">
-            <i class="bx bx-download me-1"></i>Download PDF
-        </button>
     </div>
 </div>
 
@@ -356,17 +389,29 @@ function number_format(number, decimals = 2, dec_point = '.', thousands_sep = ',
 
 function viewMonthDetails(month) {
     currentMonth = month;
-    const offcanvas = new bootstrap.Offcanvas(document.getElementById('transactionDetailsOffcanvas'));
+    const modal = new bootstrap.Modal(document.getElementById('transactionDetailsModal'));
     const monthData = @json($monthlyStatements);
     const monthInfo = monthData.find(m => m.month === month);
     
     if (monthInfo) {
-        document.getElementById('offcanvasMonthTitle').textContent = `All Transactions for ${monthInfo.month_name} (${monthInfo.transaction_count} transactions)`;
-        document.getElementById('totalEnteredAmount').textContent = `${number_format(monthInfo.total_amount, 2)} TZS`;
-        document.getElementById('totalCashedOutAmount').textContent = `${number_format(monthInfo.total_settled_amount, 2)} TZS`;
+        // Update modal title
+        document.getElementById('modalMonthTitle').textContent = `All Transactions for ${monthInfo.month_name} (${monthInfo.transaction_count} transactions)`;
+        
+        // Update Monthly Reconciliation title
+        document.getElementById('reconciliationTitle').textContent = `Monthly Reconciliation - ${monthInfo.month_name}`;
+        
+        // Populate reconciliation summary
+        document.getElementById('totalCount').textContent = monthInfo.transaction_count || 0;
+        document.getElementById('totalAmount').textContent = `${number_format(monthInfo.total_amount || 0, 2)} TZS`;
+        document.getElementById('successCount').textContent = monthInfo.success_count || 0;
+        document.getElementById('successAmount').textContent = `${number_format(monthInfo.success_amount || 0, 2)} TZS`;
+        document.getElementById('pendingCount').textContent = monthInfo.pending_count || 0;
+        document.getElementById('pendingAmount').textContent = `${number_format(monthInfo.pending_amount || 0, 2)} TZS`;
+        document.getElementById('failedCount').textContent = monthInfo.failed_count || 0;
+        document.getElementById('failedAmount').textContent = `${number_format(monthInfo.failed_amount || 0, 2)} TZS`;
     }
     
-    offcanvas.show();
+    modal.show();
     
     // Load transaction details for the month
     loadTransactionDetails(month);
