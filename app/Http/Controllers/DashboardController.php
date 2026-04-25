@@ -275,15 +275,16 @@ class DashboardController extends Controller
                 $allMonths[] = $monthDate->format('Y-m');
             }
 
-            // Get monthly breakdown from database (without currency filter for monthly summary)
+            // Get monthly breakdown from database - only settled transactions (SUCCESS and SETTLED)
             $dbMonthlyStatements = Transaction::select(
                 DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
                 DB::raw('COUNT(*) as transaction_count'),
                 DB::raw('SUM(amount) as total_amount'),
                 DB::raw('SUM(CASE WHEN status = "SUCCESS" THEN amount ELSE 0 END) as success_amount'),
-                DB::raw('SUM(CASE WHEN status IN ("PROCESSING", "PENDING") THEN amount ELSE 0 END) as pending_amount'),
-                DB::raw('SUM(CASE WHEN status = "FAILED" THEN amount ELSE 0 END) as failed_amount')
+                DB::raw('SUM(CASE WHEN status = "SETTLED" THEN amount ELSE 0 END) as settled_amount'),
+                DB::raw('SUM(CASE WHEN status = "SUCCESS" OR status = "SETTLED" THEN amount ELSE 0 END) as total_settled_amount')
             )
+            ->whereIn('status', ['SUCCESS', 'SETTLED'])
             ->whereIn(DB::raw('DATE_FORMAT(created_at, "%Y-%m")'), $allMonths)
             ->groupBy('month')
             ->orderBy('month', 'desc')
@@ -298,15 +299,15 @@ class DashboardController extends Controller
                 $transactionCount = 0;
                 $totalAmount = 0;
                 $successAmount = 0;
-                $pendingAmount = 0;
-                $failedAmount = 0;
+                $settledAmount = 0;
+                $totalSettledAmount = 0;
                 
                 if ($data) {
                     $transactionCount = $data->transaction_count ?? 0;
                     $totalAmount = $data->total_amount ?? 0;
                     $successAmount = $data->success_amount ?? 0;
-                    $pendingAmount = $data->pending_amount ?? 0;
-                    $failedAmount = $data->failed_amount ?? 0;
+                    $settledAmount = $data->settled_amount ?? 0;
+                    $totalSettledAmount = $data->total_settled_amount ?? 0;
                 }
                 
                 return [
@@ -315,16 +316,17 @@ class DashboardController extends Controller
                     'transaction_count' => $transactionCount,
                     'total_amount' => $totalAmount,
                     'success_amount' => $successAmount,
-                    'pending_amount' => $pendingAmount,
-                    'failed_amount' => $failedAmount,
+                    'settled_amount' => $settledAmount,
+                    'total_settled_amount' => $totalSettledAmount,
                     'has_data' => $transactionCount > 0
                 ];
             });
             
-            // Get transactions for selected month with full reconciliation
+            // Get transactions for selected month - only settled transactions (SUCCESS and SETTLED)
             $selectedMonthTransactions = Transaction::when($selectedMonth, function($query, $selectedMonth) {
                     return $query->where(DB::raw('DATE_FORMAT(created_at, "%Y-%m")'), $selectedMonth);
                 })
+                ->whereIn('status', ['SUCCESS', 'SETTLED'])
                 ->orderBy('created_at', 'desc')
                 ->get();
 
@@ -956,5 +958,36 @@ class DashboardController extends Controller
     public function systemSecurityLogs()
     {
         return view('system-settings.security-logs');
+    }
+
+    /**
+     * Get transactions for a specific month (API endpoint)
+     */
+    public function getMonthTransactions(Request $request)
+    {
+        try {
+            $month = $request->get('month');
+            
+            if (!$month) {
+                return response()->json(['error' => 'Month parameter is required'], 400);
+            }
+            
+            // Get settled transactions for the month
+            $transactions = Transaction::where(DB::raw('DATE_FORMAT(created_at, "%Y-%m")'), $month)
+                ->whereIn('status', ['SUCCESS', 'SETTLED'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+            
+            return response()->json([
+                'success' => true,
+                'transactions' => $transactions,
+                'count' => $transactions->count()
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to load transactions: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

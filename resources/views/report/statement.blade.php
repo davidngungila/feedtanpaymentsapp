@@ -68,8 +68,8 @@
                                 <th>Transactions</th>
                                 <th>Total Amount</th>
                                 <th>Success</th>
-                                <th>Pending</th>
-                                <th>Failed</th>
+                                <th>Settled</th>
+                                <th>Total Settled</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -92,10 +92,10 @@
                                         <span class="text-success">{{ number_format($monthly['success_amount'], 2) }}</span>
                                     </td>
                                     <td>
-                                        <span class="text-warning">{{ number_format($monthly['pending_amount'], 2) }}</span>
+                                        <span class="text-info">{{ number_format($monthly['settled_amount'], 2) }}</span>
                                     </td>
                                     <td>
-                                        <span class="text-danger">{{ number_format($monthly['failed_amount'], 2) }}</span>
+                                        <span class="text-primary fw-bold">{{ number_format($monthly['total_settled_amount'], 2) }}</span>
                                     </td>
                                     <td>
                                         <button class="btn btn-sm btn-outline-primary" onclick="viewMonthDetails('{{ $monthly['month'] }}')">
@@ -327,6 +327,194 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Detailed Transaction View Modal -->
+<div class="modal fade" id="transactionDetailsModal" tabindex="-1" aria-labelledby="transactionDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="transactionDetailsModalLabel">
+                    <i class="bx bx-receipt me-2"></i>
+                    <span id="modalMonthTitle">Transaction Details</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <h6 class="card-title text-success">Amount Entered</h6>
+                                <h4 class="mb-0" id="totalEnteredAmount">0.00 TZS</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-info">
+                            <div class="card-body">
+                                <h6 class="card-title text-info">Amount Cashed Out</h6>
+                                <h4 class="mb-0" id="totalCashedOutAmount">0.00 TZS</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-striped" id="transactionDetailsTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Order Reference</th>
+                                <th>Payer Name</th>
+                                <th>Phone</th>
+                                <th>Amount Entered</th>
+                                <th>Amount Cashed Out</th>
+                                <th>Status</th>
+                                <th>Payment Method</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionDetailsBody">
+                            <tr>
+                                <td colspan="8" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading transaction details...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="downloadTransactionPDF()">
+                    <i class="bx bx-download me-1"></i>Download PDF
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+let currentMonthTransactions = [];
+let currentMonth = '';
+
+function viewMonthDetails(month) {
+    currentMonth = month;
+    const modal = new bootstrap.Modal(document.getElementById('transactionDetailsModal'));
+    const monthData = @json($monthlyStatements);
+    const monthInfo = monthData.find(m => m.month === month);
+    
+    if (monthInfo) {
+        document.getElementById('modalMonthTitle').textContent = `Transaction Details - ${monthInfo.month_name}`;
+        document.getElementById('totalEnteredAmount').textContent = `${number_format(monthInfo.total_amount, 2)} TZS`;
+        document.getElementById('totalCashedOutAmount').textContent = `${number_format(monthInfo.total_settled_amount, 2)} TZS`;
+    }
+    
+    modal.show();
+    
+    // Load transaction details for the month
+    loadTransactionDetails(month);
+}
+
+function loadTransactionDetails(month) {
+    const tbody = document.getElementById('transactionDetailsBody');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="8" class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading transaction details...</p>
+            </td>
+        </tr>
+    `;
+    
+    fetch(`/report/statement/transactions?month=${month}`)
+        .then(response => response.json())
+        .then(data => {
+            currentMonthTransactions = data.transactions;
+            displayTransactionDetails(data.transactions);
+        })
+        .catch(error => {
+            console.error('Error loading transaction details:', error);
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center text-danger">
+                        <i class="bx bx-error-circle me-2"></i>
+                        Failed to load transaction details
+                    </td>
+                </tr>
+            `;
+        });
+}
+
+function displayTransactionDetails(transactions) {
+    const tbody = document.getElementById('transactionDetailsBody');
+    
+    if (transactions.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center text-muted">
+                    <i class="bx bx-info-circle me-2"></i>
+                    No transactions found for this month
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = transactions.map(transaction => `
+        <tr>
+            <td>${formatDate(transaction.created_at)}</td>
+            <td><code>${transaction.order_reference}</code></td>
+            <td>${transaction.payer_name || 'Unknown'}</td>
+            <td>${transaction.phone || 'N/A'}</td>
+            <td class="text-success">${number_format(transaction.amount, 2)} TZS</td>
+            <td class="text-info">${number_format(transaction.amount, 2)} TZS</td>
+            <td>
+                <span class="badge bg-${getStatusColor(transaction.status)}">
+                    ${transaction.status}
+                </span>
+            </td>
+            <td>${transaction.payment_method || 'N/A'}</td>
+        </tr>
+    `).join('');
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function getStatusColor(status) {
+    switch(status) {
+        case 'SUCCESS': return 'success';
+        case 'SETTLED': return 'info';
+        case 'PROCESSING':
+        case 'PENDING': return 'warning';
+        case 'FAILED': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+function downloadTransactionPDF() {
+    const month = document.getElementById('modalMonthTitle').textContent.split(' - ')[1];
+    const url = `/report/statement/export?format=pdf&month=${currentMonth}&currency=TZS`;
+    window.open(url, '_blank');
+}
+</script>
+@endpush
+
 </div>
 @endsection
 

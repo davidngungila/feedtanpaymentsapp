@@ -52,6 +52,9 @@ Route::post('/sync/payments', [StatementController::class, 'syncPayments'])->nam
 // Report export routes
 Route::get('/report/statement/export', [DashboardController::class, 'exportStatement'])->name('report.statement.export');
 
+// Report API routes
+Route::get('/report/statement/transactions', [DashboardController::class, 'getMonthTransactions'])->name('report.statement.transactions');
+
 // Report routes
 Route::get('/report/balance', [DashboardController::class, 'reportBalance'])->name('report.balance');
 Route::get('/report/statement', [DashboardController::class, 'reportStatement'])->name('report.statement');
