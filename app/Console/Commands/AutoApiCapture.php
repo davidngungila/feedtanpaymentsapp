@@ -29,8 +29,15 @@ class AutoApiCapture extends Command
     {
         $this->info('Starting automatic API capture...');
         
+        // Clear Laravel cache to ensure latest changes are loaded
+        $this->call('cache:clear');
+        $this->call('config:clear');
+        $this->call('route:clear');
+        
         try {
-            $apiCapture = new ApiCaptureController(app(\App\Services\ClickPesaAPIService::class));
+            // Create the service directly to avoid dependency injection issues
+            $clickPesaService = new \App\Services\ClickPesaAPIService();
+            $apiCapture = new ApiCaptureController($clickPesaService);
             $result = $apiCapture->autoCapture();
             
             $data = json_decode($result->getContent(), true);
