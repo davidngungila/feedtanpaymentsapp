@@ -29,6 +29,7 @@ Route::get('/account-settings/connections', [DashboardController::class, 'connec
 // Payment routes
 Route::get('/payments/initiate', [PaymentController::class, 'initiate'])->name('payments.initiate');
 Route::post('/payments/initiate', [PaymentController::class, 'processInitiate'])->name('payments.process.initiate');
+Route::post('/payments/store', [PaymentController::class, 'store'])->name('payments.store');
 Route::get('/payments/status', [PaymentController::class, 'status'])->name('payments.status');
 Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
 Route::post('/payments/sync-api', [PaymentController::class, 'syncFromAPI'])->name('payments.sync.api');
