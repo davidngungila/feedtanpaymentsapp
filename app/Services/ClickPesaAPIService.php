@@ -24,6 +24,14 @@ class ClickPesaAPIService
     }
 
     /**
+     * Get current configuration
+     */
+    public function getConfig(): array
+    {
+        return $this->config;
+    }
+
+    /**
      * Generate JWT Authorization Token
      */
     public function generateToken(): string

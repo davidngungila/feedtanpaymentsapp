@@ -41,6 +41,9 @@ Route::get('/api-capture/manual', [ApiCaptureController::class, 'manualCapture']
 Route::get('/api-capture/status', [ApiCaptureController::class, 'captureStatus'])->name('api.capture.status');
 Route::get('/admin/api-capture', [ApiCaptureController::class, 'dashboard'])->name('admin.api.capture');
 
+// API Diagnostic routes
+Route::get('/admin/api-diagnostic', [ApiDiagnosticController::class, 'diagnose'])->name('admin.api.diagnostic');
+
 // Payout routes
 Route::get('/payouts/initiate', [DashboardController::class, 'initiatePayout'])->name('payouts.initiate');
 Route::get('/payouts/history', [DashboardController::class, 'payoutHistory'])->name('payouts.history');

@@ -92,12 +92,16 @@ class PaymentController extends Controller
             
             $payment = $this->clickPesa->initiateUSSDPush($request->amount, $orderReference, $formattedPhone, null, $customerDetails);
 
+            // Check if we're in fallback mode
+            $isFallbackMode = isset($payment['fallback_mode']) && $payment['fallback_mode'] === true;
+
             // Update transaction with API response
             if (isset($payment['id'])) {
                 $transaction->update([
                     'transaction_id' => $payment['id'],
                     'status' => $payment['status'],
                     'payment_method' => $payment['channel'] ?? null,
+                    'callback_data' => $payment,
                 ]);
             }
 
@@ -106,6 +110,23 @@ class PaymentController extends Controller
                 $this->sendPaymentInitiationNotification($formattedPhone, $orderReference, $request->amount, $request->payer_name);
             } catch (\Exception $e) {
                 Log::warning('SMS notification failed', ['error' => $e->getMessage()]);
+            }
+
+            // Return appropriate response based on whether we used fallback mode
+            if ($isFallbackMode) {
+                Log::warning('Payment initiated in fallback mode', [
+                    'order_reference' => $orderReference,
+                    'phone' => $formattedPhone,
+                    'amount' => $request->amount
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'order_reference' => $orderReference,
+                    'message' => 'Payment queued successfully! The payment system is currently experiencing technical difficulties. Your payment will be processed when the system is restored. Reference: ' . $orderReference,
+                    'fallback_mode' => true,
+                    'warning' => 'API temporarily unavailable - payment queued for processing'
+                ]);
             }
 
             return response()->json([
