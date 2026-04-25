@@ -341,6 +341,19 @@
 let currentMonthTransactions = [];
 let currentMonth = '';
 
+// JavaScript equivalent of PHP's number_format function
+function number_format(number, decimals = 2, dec_point = '.', thousands_sep = ',') {
+    // Convert number to string and handle negative numbers
+    const strNumber = parseFloat(number).toFixed(decimals);
+    const parts = strNumber.split('.');
+    
+    // Add thousands separator
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, thousands_sep);
+    
+    // Join with decimal point
+    return parts.join(dec_point);
+}
+
 function viewMonthDetails(month) {
     currentMonth = month;
     const offcanvas = new bootstrap.Offcanvas(document.getElementById('transactionDetailsOffcanvas'));
