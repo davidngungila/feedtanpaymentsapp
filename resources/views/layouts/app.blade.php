@@ -192,6 +192,90 @@
     <!-- Page JS -->
     @stack('scripts')
 
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055">
+        <!-- Toasts will be dynamically added here -->
+    </div>
+
+    <!-- Toast Helper Functions -->
+    <script>
+    // Toast notification helper functions
+    function showToast(message, type = 'primary', title = 'Notification', duration = 5000) {
+        const toastContainer = document.querySelector('.toast-container');
+        const toastId = 'toast-' + Date.now();
+        
+        const iconMap = {
+            'primary': 'bx bx-bell',
+            'success': 'bx bx-check-circle',
+            'danger': 'bx bx-error-circle',
+            'warning': 'bx bx-error',
+            'info': 'bx bx-info-circle',
+            'secondary': 'bx bx-bell'
+        };
+        
+        const toastHtml = `
+            <div id="${toastId}" class="bs-toast toast toast-placement-ex m-2 bg-${type}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="${duration}">
+                <div class="toast-header">
+                    <i class="icon-base ${iconMap[type]} me-2"></i>
+                    <div class="me-auto fw-medium">${title}</div>
+                    <small>Just now</small>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `;
+        
+        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+        
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement);
+        toast.show();
+        
+        // Remove toast element after it's hidden
+        toastElement.addEventListener('hidden.bs.toast', () => {
+            toastElement.remove();
+        });
+    }
+    
+    // Specific toast functions for common use cases
+    function showSuccessToast(message, title = 'Success') {
+        showToast(message, 'success', title, 4000);
+    }
+    
+    function showErrorToast(message, title = 'Error') {
+        showToast(message, 'danger', title, 6000);
+    }
+    
+    function showWarningToast(message, title = 'Warning') {
+        showToast(message, 'warning', title, 5000);
+    }
+    
+    function showInfoToast(message, title = 'Information') {
+        showToast(message, 'info', title, 4000);
+    }
+    
+    // Auto-show session messages (if any)
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check for any session messages and show them as toasts
+        const successMessages = @json(session()->get('success', []));
+        const errorMessages = @json(session()->get('error', []));
+        const warningMessages = @json(session()->get('warning', []));
+        const infoMessages = @json(session()->get('info', []));
+        
+        successMessages.forEach(message => showSuccessToast(message));
+        errorMessages.forEach(message => showErrorToast(message));
+        warningMessages.forEach(message => showWarningToast(message));
+        infoMessages.forEach(message => showInfoToast(message));
+        
+        // Clear session messages
+        @php
+            session()->forget(['success', 'error', 'warning', 'info']);
+        @endphp
+    });
+    </script>
+
     <!-- Place this tag before closing body tag for github widget button. -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
 </body>

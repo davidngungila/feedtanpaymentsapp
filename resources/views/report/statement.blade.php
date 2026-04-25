@@ -437,11 +437,12 @@ function loadTransactionDetails(month) {
         })
         .catch(error => {
             console.error('Error loading transaction details:', error);
+            showErrorToast('Failed to load transaction details. Please try again.', 'Load Error');
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="text-center text-danger">
-                        <i class="bx bx-error-circle me-2"></i>
-                        Failed to load transaction details
+                    <td colspan="8" class="text-center text-muted">
+                        <i class="bx bx-info-circle me-2"></i>
+                        No transactions found for this month
                     </td>
                 </tr>
             `;
@@ -506,6 +507,7 @@ function getStatusColor(status) {
 function downloadTransactionPDF() {
     const url = `/report/statement/export?format=pdf&month=${currentMonth}&currency=TZS`;
     window.open(url, '_blank');
+    showSuccessToast('PDF statement download started. Check your downloads folder.', 'Download Started');
 }
 </script>
 @endpush

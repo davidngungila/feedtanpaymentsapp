@@ -528,19 +528,19 @@ function syncPayments() {
     .then(data => {
         if (data.success) {
             // Show success message
-            showToast('success', data.message || 'Payments synced successfully!');
+            showSuccessToast(data.message || 'Payments synced successfully!', 'Sync Complete');
             
             // Reload page after a short delay
             setTimeout(() => {
                 window.location.reload();
             }, 2000);
         } else {
-            showToast('error', data.message || 'Failed to sync payments');
+            showErrorToast(data.message || 'Failed to sync payments', 'Sync Failed');
         }
     })
     .catch(error => {
         console.error('Sync error:', error);
-        showToast('error', 'An error occurred while syncing payments');
+        showErrorToast('An error occurred while syncing payments', 'Sync Error');
     })
     .finally(() => {
         // Restore button state
@@ -703,7 +703,7 @@ function confirmDownloadReceipt() {
     const email = document.getElementById('receiptEmail').value;
     const includeDetails = document.getElementById('includeDetails').checked;
     
-    alert(`Downloading receipt in ${format.toUpperCase()} format to ${email}${includeDetails ? ' with full details' : ''}...`);
+    showSuccessToast(`Receipt download started in ${format.toUpperCase()} format. Check your email: ${email}`, 'Download Started');
     
     // Close modal
     const modal = bootstrap.Modal.getInstance(document.getElementById('downloadReceiptModal'));
@@ -713,7 +713,7 @@ function confirmDownloadReceipt() {
 function payAgain(transactionId) {
     const transaction = transactions.find(t => t.id === transactionId);
     if (transaction) {
-        alert(`Initiating new payment to ${transaction.recipient.name} (${transaction.recipient.email})...`);
+        showInfoToast(`Initiating new payment to ${transaction.recipient.name} (${transaction.recipient.email})...`, 'New Payment');
         
         // Close details modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('transactionDetailsModal'));
@@ -726,24 +726,24 @@ function payAgain(transactionId) {
 
 function cancelPayment(transactionId) {
     if (confirm('Are you sure you want to cancel this payment?')) {
-        alert('Payment cancelled: ' + transactionId);
+        showWarningToast('Payment cancellation requested. Transaction ID: ' + transactionId, 'Payment Cancelled');
     }
 }
 
 function retryPayment(transactionId) {
-    alert('Retrying payment: ' + transactionId);
+    showInfoToast('Retrying payment. Transaction ID: ' + transactionId, 'Payment Retry');
 }
 
 function disputePayment(transactionId) {
-    alert('Opening dispute form for transaction: ' + transactionId);
+    showWarningToast('Opening dispute form for transaction: ' + transactionId, 'Payment Dispute');
 }
 
 function sendAgain(transactionId) {
-    alert('Preparing to send payment again: ' + transactionId);
+    showInfoToast('Preparing to send payment again. Transaction ID: ' + transactionId, 'Send Again');
 }
 
 function exportHistory() {
-    alert('Exporting payment history...');
+    showSuccessToast('Payment history export started. Check your downloads folder.', 'Export Started');
 }
 
 function applyFilters() {
