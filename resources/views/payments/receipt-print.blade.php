@@ -114,17 +114,17 @@
   <div style="text-align: center; padding-top: 1px; color: darkgreen; font-weight: bold;">
     *************************************************************************************************
   </div>
-  <div class="row"><span class="label">Receipt ID</span> <span class="value">:${receiptId}</span></div>
-  <div class="row"><span class="label">Date</span> <span class="value">:${formattedDate}</span></div>
-  <div class="row"><span class="label">Payee</span> <span class="value">:${payee}</span></div>
-  <div class="row"><span class="label">Amount Paid</span> <span class="value">:Tsh ${amountFigures}</span></div>
-  <div class="row"><span class="label">In Words</span> <span class="value">:${amountWords}</span></div>
-  <div class="row"><span class="label">Reference No</span> <span class="value">:${reference}</span></div>
-  <div class="row"><span class="label">Purpose</span> <span class="value">:${purpose}</span></div>
+  <div class="row"><span class="label">Receipt ID</span> <span class="value">:{{ $transaction->id ?? 'N/A' }}</span></div>
+  <div class="row"><span class="label">Date</span> <span class="value">:{{ \Carbon\Carbon::parse($transaction->created_at)->format('M d, Y H:i') }}</span></div>
+  <div class="row"><span class="label">Payee</span> <span class="value">:{{ $transaction->payer_name ?? 'N/A' }}</span></div>
+  <div class="row"><span class="label">Amount Paid</span> <span class="value">:Tsh {{ number_format($transaction->amount, 2) }}</span></div>
+  <div class="row"><span class="label">In Words</span> <span class="value">:{{ number_format($transaction->amount, 2) }} Tanzania Shillings Only</span></div>
+  <div class="row"><span class="label">Reference No</span> <span class="value">:{{ $transaction->order_reference ?? 'N/A' }}</span></div>
+  <div class="row"><span class="label">Purpose</span> <span class="value">:{{ $transaction->description ?? 'Payment' }}</span></div>
   <div style="margin-top: 15px; text-align: center; font-weight: bold;">
   <div style="display: inline-block; font-size: 13px; padding-top: 8px; border-top: 2px solid darkgreen; margin-top: 5px;">
     Signed by <span style="color: darkgreen;">Witness Clement (Accountant)</span> : 
-    Verification Code: <span style="color: red; font-weight: bold;">${verificationCode}</span>
+    Verification Code: <span style="color: red; font-weight: bold;">{{ strtoupper(substr(md5($transaction->order_reference . $transaction->id), 0, 8)) }}</span>
   </div>
 </div>
 
@@ -134,7 +134,7 @@
 </div>
 
 <div style="margin-top: 5px; text-align: center; font-size: 12px; color: darkgreen; font-style: italic;">
-  Generated and Approved on: <span style="color: navy; font-weight: bold;">${currentDate}</span>
+  Generated and Approved on: <span style="color: navy; font-weight: bold;">{{ \Carbon\Carbon::now()->format('M d, Y H:i:s') }}</span>
 </div>
 
 
