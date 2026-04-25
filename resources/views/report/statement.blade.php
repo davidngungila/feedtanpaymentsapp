@@ -460,45 +460,7 @@ function downloadTransactionPDF() {
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const periodSelect = document.getElementById('periodSelect');
-    const customRange = document.getElementById('customRange');
-    
-    periodSelect.addEventListener('change', function() {
-        if (this.value === 'custom') {
-            customRange.style.display = 'block';
-        } else {
-            customRange.style.display = 'none';
-        }
-    });
-});
-
-function filterStatements() {
-    const period = document.getElementById('periodSelect').value;
-    const account = document.getElementById('accountSelect').value;
-    
-    const rows = document.querySelectorAll('#statementsTable tbody tr');
-    
-    rows.forEach(row => {
-        let showRow = true;
-        
-        // Account filter
-        if (account !== 'all') {
-            const accountBadge = row.cells[1].textContent.toLowerCase();
-            if (!accountBadge.includes(account)) {
-                showRow = false;
-            }
-        }
-        
-        // Period filter (simplified)
-        if (period !== 'all') {
-            // In a real application, this would filter by actual dates
-            console.log('Filtering by period:', period);
-        }
-        
-        row.style.display = showRow ? '' : 'none';
-    });
-}
+// Removed filter functionality as elements don't exist in current view
 
 function viewStatement(statementId) {
     // Load statement preview
@@ -606,72 +568,6 @@ function downloadAllStatements() {
     }
 }
 
-function sendEmail() {
-    const emailAddress = document.getElementById('emailAddress').value;
-    const selectedStatements = Array.from(document.querySelectorAll('.statement-checkbox:checked'))
-        .map(cb => cb.value);
-    
-    if (!emailAddress) {
-        alert('Please enter an email address');
-        return;
-    }
-    
-    if (selectedStatements.length === 0) {
-        alert('Please select at least one statement');
-        return;
-    }
-    
-    const format = document.querySelector('input[name="format"]:checked').value;
-    const message = document.getElementById('emailMessage').value;
-    
-    alert(`Sending ${selectedStatements.length} statement(s) in ${format.toUpperCase()} format to: ${emailAddress}`);
-    
-    // Close modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('emailModal'));
-    modal.hide();
-}
-
-function selectMonth() {
-    const monthSelect = document.getElementById('monthSelect');
-    const currency = document.getElementById('currency').value;
-    
-    if (monthSelect.value) {
-        window.location.href = `/report/statement?month=${monthSelect.value}&currency=${currency}`;
-    }
-}
-
-function updateStatement() {
-    const monthSelect = document.getElementById('monthSelect');
-    const currency = document.getElementById('currency').value;
-    
-    window.location.href = `/report/statement?month=${monthSelect.value}&currency=${currency}`;
-}
-
-function viewMonthDetails(month) {
-    window.location.href = `/report/statement?month=${month}`;
-}
-
-function exportPDF() {
-    const month = document.getElementById('monthSelect').value;
-    const currency = document.getElementById('currency').value;
-    
-    window.open(`/report/statement/export?format=pdf&month=${month}&currency=${currency}`, '_blank');
-}
-
-function exportExcel() {
-    const month = document.getElementById('monthSelect').value;
-    const currency = document.getElementById('currency').value;
-    
-    window.open(`/report/statement/export?format=excel&month=${month}&currency=${currency}`, '_blank');
-}
-
-function toggleAllStatements() {
-    const selectAll = document.getElementById('selectAll');
-    const checkboxes = document.querySelectorAll('.statement-checkbox');
-    
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = selectAll.checked;
-    });
-}
+// Removed all functions that reference non-existent DOM elements
 </script>
 @endpush
