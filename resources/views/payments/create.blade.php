@@ -144,28 +144,36 @@ document.getElementById('paymentForm').addEventListener('submit', function(e) {
         loadingModal.hide();
         
         if (data.success) {
-            // Redirect to payment status page
-            window.location.href = '{{ route('payments.status') }}?reference=' + data.order_reference;
+            // Show toast notification based on response type
+            if (data.fallback_mode) {
+                // Fallback mode - show warning toast
+                showToast(data.message, 'warning', 'Payment Queued', 8000);
+                
+                // Show additional warning toast
+                showToast(data.warning || 'API temporarily unavailable - payment queued for processing', 'info', 'System Status', 6000);
+            } else {
+                // Normal success - show success toast
+                showToast(data.message, 'success', 'Payment Initiated', 5000);
+            }
+            
+            // Reset form
+            this.reset();
+            
+            // Optionally redirect to status page after showing toast
+            setTimeout(() => {
+                window.location.href = '{{ route('payments.status') }}?reference=' + data.order_reference;
+            }, data.fallback_mode ? 3000 : 2000);
         } else {
-            // Show error
+            // Show error toast
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Initiate Payment';
             
-            let alertClass = 'alert-danger';
+            let toastType = 'danger';
             if (data.warning_type === 'insufficient_funds') {
-                alertClass = 'alert-warning';
+                toastType = 'warning';
             }
             
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert ${alertClass} alert-dismissible fade show`;
-            alertDiv.innerHTML = `
-                ${data.message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            
-            // Insert alert after card header
-            const cardHeader = document.querySelector('.card-header');
-            cardHeader.after(alertDiv);
+            showToast(data.message, toastType, 'Payment Failed', 6000);
         }
     })
     .catch(error => {
@@ -175,18 +183,56 @@ document.getElementById('paymentForm').addEventListener('submit', function(e) {
         
         console.error('Error:', error);
         
-        // Show generic error
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-        alertDiv.innerHTML = `
-            An error occurred while processing your payment. Please try again.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        
-        const cardHeader = document.querySelector('.card-header');
-        cardHeader.after(alertDiv);
+        // Show generic error toast
+        showToast('An error occurred while processing your payment. Please try again.', 'danger', 'System Error', 6000);
     });
 });
+
+// Toast notification function
+function showToast(message, type = 'primary', title = 'Notification', duration = 5000) {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '1055';
+        document.body.appendChild(toastContainer);
+    }
+    
+    const toastId = 'toast-' + Date.now();
+    
+    const iconMap = {
+        'primary': 'bx bx-bell',
+        'success': 'bx bx-check-circle',
+        'danger': 'bx bx-error-circle',
+        'warning': 'bx bx-error',
+        'info': 'bx bx-info-circle',
+        'secondary': 'bx bx-bell'
+    };
+    
+    const toastHtml = `
+        <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="${duration}">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="${iconMap[type]} me-2"></i>
+                    <strong>${title}:</strong> ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement);
+    toast.show();
+    
+    // Remove toast element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
+    });
+}
 
 // Phone number formatting
 document.getElementById('phone_number').addEventListener('input', function(e) {
